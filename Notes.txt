@@ -1,28 +1,37 @@
 Can't seem to access recent data
+-find those days, errors happen
 
 Can I access weather data? Easier to remove days that have bad data then
 
 Examples mostly just seemed for sunset, but this could be a problem for sunrise too, right?
 I'm guessing sunrise time is harder to tell because it's more commonly misty/foggy
 
-Can I have access to file showing where inverters are, and maybe the trackers/motors that go with them?
--If I get far enough along, this could help me determine the angles to change
-
-Is it possible to look at string currents and should I?
+How to access https://gpmportal.greenpowermonitor.com/application/login
 
 
 ======================== Current strategy ========================
--select time intervals to pull data for (every month, every 3 months, etc.), to mitigate effect of changing sunrise/sunset times
--take note of and eliminate bad data (if possible), like bad weather or anomalies
---or leave it and say quantity of data makes up for that
+Gather Data
+-pull data for more months (stick with one month time intervals)
 
+Clean Up Data
+-take note of and eliminate days with bad weather
+--27986 irradiance
+---avg for a month
+---exclude days maybe 50% below that average
+--maybe college can pay for access to weather data
+-filter out zero data days
+
+Visualize Data
 -for each inverter, generate an 'average active power over 1 day' graph
 --maybe an average for each interval, in addition to an average across all intervals
 
+Analyze Data
 -find rows affected by shade:
 --compare sunset slopes
 --maybe generate polynomial of best fit at sunset part and analyze concavity
 --compare times when sunset drop begins (earlier decline could mean shade)
+--initial drop is usually steeper
+--whole drop is usually more concave up
 
 
 
