@@ -41,3 +41,12 @@ def get_times():
     ends.append(request_time())
 
     return [starts, ends]
+
+def get_times_unix():
+    starts = []
+    ends = []
+
+    starts.append(int(input("\nGive a start time (unix) ").strip()))
+    ends.append(int(input("\nGive an end time (unix) ").strip()))
+
+    return [starts, ends]

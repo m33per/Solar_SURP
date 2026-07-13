@@ -1,5 +1,5 @@
 import subprocess
-import DataRequest.ProdIds as ProdIds
+import ProdIds as ProdIds
 
 # input a single product ID
 def provideID(process, id, value):
@@ -87,7 +87,7 @@ process = subprocess.Popen(
 
 # give input
 provideIDs(process, ProdIds.inverter_custom_active_powers) # change second parameter to change product ids you are requesting
-provideTimes(process, "01/20/2025 00:00:00", "06/21/2025 00:00:00") # change times to change interval you are requesting
+provideTimes(process, "07/06/2025 00:00:00", "07/06/2025 23:00:00") # change times to change interval you are requesting
 
 # get confirmation that data was fetched
 doneConf = ""

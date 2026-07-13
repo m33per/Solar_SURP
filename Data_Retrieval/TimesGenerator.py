@@ -1,11 +1,12 @@
 from datetime import datetime
 
-numDays = 30
+numDays = 11
+month = '07'
 
 starts = [0] * numDays
 ends = [0] * numDays
 
-t = "07/01/2025 04:00:00"
+t = f"{month}/01/2026 04:00:00"
 dt = datetime(
     int(t[6:10]),
     int(t[0:2]),
@@ -16,7 +17,7 @@ dt = datetime(
 )
 starts[0] = int(dt.timestamp()) - 25200
 
-t = "07/01/2025 22:55:00"
+t = f"{month}/01/2026 22:55:00"
 dt = datetime(
     int(t[6:10]),
     int(t[0:2]),
