@@ -1,0 +1,33 @@
+Pick 2 sets per month, one at beginning/end of previous month, one at middle.
+For each problem inverter and non-problem ones nearby, calculate energy produced during sunset
+Compare problem inverters' energies to energies of closest good inverters
+
+Just do July for now, maybe like 4 sets, each set has 2 days
+
+July predicted problem inverters: 44, 46, 47, 48, 58, 59, 60, 61, 62, 63, 64, 65, 72, 73
+
+Good July days (sunset) to use:
+1, 4 : 16:45:00
+10, 11 : 16:45:00
+18, 19 : 16:45:00
+29, 30 : 16:45:00
+
+
+Done. The problem inverters don't always do notably worse than the surrounding ones. Sometimes they're actually better. Many of the sunset drops for the inverters I thought were problematic started later than other ones. I don't know why.
+
+
+inverters 41, 42, 43 facing wrong way
+
+
+May 11 2026
+Pick up 38-41 as problem ones (look at greenpowermonitor)
+
+do this once per week for July, August, September 2025
+
+Step 1: find good days. first find area under graphs for each day to calculate
+        energy produced, and check that they actually are good days.
+        can plot irradiance.
+
+Step 2: plug those days into the bad slope analysis
+        plug those days into bad concavity analysis. Make quadratic start at point of
+        inflection. Make it end before 0, so when power is at like 5 kW

@@ -1,6 +1,6 @@
 import pandas as pd
 
-monthYear = 'July2025'
+monthYear = 'May2025'
 
 # get list of strings of inverters outside ranges
 def getResults(monthYear):
@@ -31,4 +31,5 @@ def printResults(monthYear):
     for r in res:
         print(r)
 
-printResults(monthYear)
+if __name__ == '__main__':
+    printResults(monthYear)

@@ -48,4 +48,4 @@ filepath = f"Data_Analysis\ActivePowerAverages\\Unfiltered\\{monthYear}APAvgs.cs
 #showAvgs(filepath, 1, 75)
 
 filepath = f"Data_Analysis\ActivePowerAverages\\FaultyDataDaysRemoved\\{monthYear}APAvgs.csv"
-showAvgs(filepath, 1, 75)
+showAvgs(filepath, 1, 68)

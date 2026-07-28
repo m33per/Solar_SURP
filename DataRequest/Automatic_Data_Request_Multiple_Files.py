@@ -190,7 +190,7 @@ def generateFiles(folder, items):
             doneConf += char
         print(doneConf, end="")
 
-monthYear = 'November2025'
+monthYear = 'May2025'
 
 generateFiles(f'Data\\ActivePower\\{monthYear}', ProdIds.inverter_active_powers_partial.items())
 
@@ -229,7 +229,7 @@ def checkIfTooLittleData(filename):
     return False
 
 # determine which days likely do not have data and days that have too little data based on given inverter
-def findDaysWithoutData(start, end, invNum=1):
+def findDaysWithoutData(start, end, invNum):
     key = ''
     val = ''
     if invNum == 1:
@@ -348,8 +348,8 @@ def findDaysWithoutData(start, end, invNum=1):
     return [noDataDays, tooLittleDataDays]
 
 # for this function to work, in GetPowerData.py set JustOneInt to True in call to multTimeInts (line 72)
-def seeNoAndLowDataDays(start, end):
-    res = findDaysWithoutData(start, end, 1)
+def seeNoAndLowDataDays(start, end, invNum=1):
+    res = findDaysWithoutData(start, end, invNum)
     noData = res[0]
     lowData = res[1]
     print()
@@ -358,4 +358,4 @@ def seeNoAndLowDataDays(start, end):
     print(f'No data: {noData}')
     print(f'\nLow data: {lowData}')
 
-#seeNoAndLowDataDays(start_jul2026_1_to_11, end_jul2026_1_to_11)
+#seeNoAndLowDataDays(start_jul2026_1_to_11, end_jul2026_1_to_11, 50)

@@ -5,7 +5,7 @@
 import pandas as pd
 
 # time interval to work with
-monthYear = 'December2025'
+monthYear = 'May2025'
 
 # file to contain avgs
 avg_csv = pd.read_csv(f'Data_Analysis\\ActivePowerAverages\\Unfiltered\{monthYear}APAvgs.csv', index_col=1)
@@ -32,14 +32,13 @@ def getAvgsInFile(invNum, mmYY):
             sum += r[f'Active Power Inverter {invNum} (kW).{k}']
             x += 1
         avg = sum / x
-        #print(f'{i}: {avg}')
         avgs.append(avg)
 
     return avgs
 
 # loop through every inverter
 for i in range(1, 76):
-    avg_csv[f'Active Power Inverter {i} (kW)'] = getAvgsInFile(i, monthYear)
+    avg_csv[f'Active Power Inverter {i} (kW)'] = getAvgsInFile(i, monthYear)#[0:226]
 
 # write data to file to contain avgs
 avg_csv.to_csv(f'Data_Analysis\\ActivePowerAverages\\Unfiltered\{monthYear}APAvgs.csv', index=False)

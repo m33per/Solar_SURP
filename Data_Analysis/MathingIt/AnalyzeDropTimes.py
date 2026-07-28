@@ -1,6 +1,6 @@
 import pandas as pd
 
-monthYear = 'July2025'
+monthYear = 'November2025'
 
 # get list of strings of inverters outside ranges
 def getResults(monthYear):
@@ -8,7 +8,6 @@ def getResults(monthYear):
 
     # calculate numbers to use as boundaries for notable data
     summary = df['Time'].describe()
-    print(summary)
     notableRange = summary['25%'] - (0 * (summary['75%'] - summary['25%']))
     outlierRange = summary['25%'] - (1.5 * (summary['75%'] - summary['25%']))
 
@@ -32,4 +31,5 @@ def printResults(monthYear):
     for r in res:
         print(r)
 
-printResults(monthYear)
+if __name__ == '__main__':
+    printResults(monthYear)

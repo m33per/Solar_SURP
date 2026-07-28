@@ -1,3 +1,23 @@
+Note: March 2025 data appears to be corrupted. Many inverters show time stamps from November 2025.
+For now, I will not use March 2025 data.
+
+February: inverter 16 has spotty data, which is why it has odd higher peaks
+          inverters 1 to 11 have data that seems offset to be earlier, and lower
+           -PROBLEM: looks like inverters 12-75 pulled data from April instead of February
+           -SOLUTION: just pull data from 12-75 and seems to be correct this time
+May: is weird
+      -PROBLEM: looks like inverters 5-75 pulled data from October instead of May
+      -SOLUTION: just pull data from 5-75 and seems to be correct this time
+
+June: is weird
+      inverters 42 to 57 have slower increases, like an avalanche on the left side
+       -days seem to be correct, some blocks of days for some of those inverters just have lower data
+      inverter 65 is more square shaped, so notably higher on the left side
+       -only a few days have data collection
+December: inverter 43 is oddly high
+           -has a lot of zero data days
+
+
 I have a way to find days that don't have any data, and days that don't have enough data.
 It's important to remove days without enough data because it seems that if even one day
 stops collecting data at some time, say 14:00, then all the days of data in that same file

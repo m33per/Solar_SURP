@@ -236,7 +236,26 @@ string_currents = {
 }
 
 inverter_custom_active_powers = {
-    "20720": "Active Power Inverter 1 (kW)"
+    "21215": "Active Power Inverter 12 (kW)"
+}
+
+inverter_active_powers_partial = {
+    "23680": "Active Power Inverter 60 (kW)",
+    "23725": "Active Power Inverter 61 (kW)",
+    "23770": "Active Power Inverter 62 (kW)",
+    "23815": "Active Power Inverter 63 (kW)",
+    "23860": "Active Power Inverter 64 (kW)",
+    "23905": "Active Power Inverter 65 (kW)",
+    "23950": "Active Power Inverter 66 (kW)",
+    "23995": "Active Power Inverter 67 (kW)",
+    "24040": "Active Power Inverter 68 (kW)",
+    "24085": "Active Power Inverter 69 (kW)",
+    "24130": "Active Power Inverter 70 (kW)",
+    "24175": "Active Power Inverter 71 (kW)",
+    "24220": "Active Power Inverter 72 (kW)",
+    "24265": "Active Power Inverter 73 (kW)",
+    "24310": "Active Power Inverter 74 (kW)",
+    "24355": "Active Power Inverter 75 (kW)"
 }
 
 inverter_active_powers = {
@@ -422,4 +441,8 @@ misc = {
     "29379": "Total Plant Availability with exceptions",
     "29380": "Specific Plant Power",
     "29381": "Specific Plant Energy"
+}
+
+irradiance = {
+    "27986": "Plant Irradiance (GHI)"
 }

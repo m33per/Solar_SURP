@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-monthYear = 'December2025'
+monthYear = 'November2025'
 output_file = f'Data_Analysis\MathingIt\Concavities\{monthYear}Concavity.csv'
 filepath_slopes = f'Data_Analysis\MathingIt\Slopes\{monthYear}Slopes.csv'
 filepath_data = f"Data_Analysis\ActivePowerAverages\\FaultyDataDaysRemoved\\{monthYear}APAvgs.csv"
