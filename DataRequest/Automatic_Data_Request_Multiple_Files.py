@@ -43,8 +43,8 @@ end_may2025 = [1746140100, 1746226500, 1746312900, 1746399300, 1746485700, 17465
 start_may2025 = [1746072000, 1746158400, 1746244800, 1746331200, 1746417600, 1746504000, 1746590400, 1746676800, 1746763200, 1746849600, 1746936000, 1747022400, 1747108800, 1747195200, 1747281600, 1747368000, 1747800000, 1747886400, 1747972800, 1748059200, 1748145600, 1748232000, 1748318400, 1748404800, 1748491200, 1748577600, 1748664000]
 end_may2025 = [1746140100, 1746226500, 1746312900, 1746399300, 1746485700, 1746572100, 1746658500, 1746744900, 1746831300, 1746917700, 1747004100, 1747090500, 1747176900, 1747263300, 1747349700, 1747436100, 1747868100, 1747954500, 1748040900, 1748127300, 1748213700, 1748300100, 1748386500, 1748472900, 1748559300, 1748645700, 1748732100]
 
-# removed because no data was being retrieved for active power: May 17, 18, 19, 20
-# removed because low data was being retrieved for active power: May 14, 16, 21
+# removed because no data was being retrieved for active power and irradiance: May 17, 18, 19, 20
+# removed because low data was being retrieved for active power and irradiance: May 14, 16, 21
 start_may2025 = [1746072000, 1746158400, 1746244800, 1746331200, 1746417600, 1746504000, 1746590400, 1746676800, 1746763200, 1746849600, 1746936000, 1747022400, 1747108800, 1747281600, 1747886400, 1747972800, 1748059200, 1748145600, 1748232000, 1748318400, 1748404800, 1748491200, 1748577600, 1748664000]
 end_may2025 = [1746140100, 1746226500, 1746312900, 1746399300, 1746485700, 1746572100, 1746658500, 1746744900, 1746831300, 1746917700, 1747004100, 1747090500, 1747176900, 1747349700, 1747954500, 1748040900, 1748127300, 1748213700, 1748300100, 1748386500, 1748472900, 1748559300, 1748645700, 1748732100]
 
@@ -55,8 +55,11 @@ end_june2025 = [1748818500, 1748904900, 1748991300, 1749077700, 1749164100, 1749
 start_june2025 = [1748750400, 1748836800, 1748923200, 1749009600, 1749096000, 1749182400, 1749268800, 1749355200, 1749441600, 1749528000, 1749614400, 1749700800, 1749787200, 1749873600, 1749960000, 1750046400, 1750132800, 1750219200, 1750305600, 1750392000, 1750478400, 1750564800, 1750737600, 1750824000, 1750910400, 1750996800, 1751083200, 1751169600, 1751256000]
 end_june2025 = [1748818500, 1748904900, 1748991300, 1749077700, 1749164100, 1749250500, 1749336900, 1749423300, 1749509700, 1749596100, 1749682500, 1749768900, 1749855300, 1749941700, 1750028100, 1750114500, 1750200900, 1750287300, 1750373700, 1750460100, 1750546500, 1750632900, 1750805700, 1750892100, 1750978500, 1751064900, 1751151300, 1751237700, 1751324100]
 
-start_july2025 = [1751342400, 1751428800, 1751515200, 1751601600, 1751688000, 1751774400, 1751860800, 1751947200, 1752033600, 1752120000, 1752206400, 1752292800, 1752379200, 1752465600, 1752552000, 1752638400, 1752724800, 1752811200, 1752897600, 1752984000, 1753070400, 1753156800, 1753243200, 1753329600, 1753416000, 1753502400, 1753588800, 1753675200, 1753761600, 1753848000]
-end_july2025 = [1751410500, 1751496900, 1751583300, 1751669700, 1751756100, 1751842500, 1751928900, 1752015300, 1752101700, 1752188100, 1752274500, 1752360900, 1752447300, 1752533700, 1752620100, 1752706500, 1752792900, 1752879300, 1752965700, 1753052100, 1753138500, 1753224900, 1753311300, 1753397700, 1753484100, 1753570500, 1753656900, 1753743300, 1753829700, 1753916100]
+start_july2025 = [1782878400, 1782964800, 1783051200, 1783137600, 1783224000, 1783310400, 1783396800, 1783483200, 1783569600, 1783656000, 1783742400, 1783828800, 1783915200, 1784001600, 1784088000, 1784174400, 1784260800, 1784347200, 1784433600, 1784520000, 1784606400, 1784692800, 1784779200, 1784865600, 1784952000, 1785038400, 1785124800, 1785211200, 1785297600, 1785384000, 1785470400]
+end_july2025 = [1782946500, 1783032900, 1783119300, 1783205700, 1783292100, 1783378500, 1783464900, 1783551300, 1783637700, 1783724100, 1783810500, 1783896900, 1783983300, 1784069700, 1784156100, 1784242500, 1784328900, 1784415300, 1784501700, 1784588100, 1784674500, 1784760900, 1784847300, 1784933700, 1785020100, 1785106500, 1785192900, 1785279300, 1785365700, 1785452100, 1785538500]
+
+start_july2025 = [1751342400, 1751428800, 1751515200, 1751601600, 1751688000, 1751774400, 1751860800, 1751947200, 1752033600, 1752120000, 1752206400, 1752292800, 1752379200, 1752465600, 1752552000, 1752638400, 1752724800, 1752811200, 1752897600, 1752984000, 1753070400, 1753156800, 1753243200, 1753329600, 1753416000, 1753502400, 1753588800, 1753675200, 1753761600, 1753848000, 1753934400]
+end_july2025 = [1751410500, 1751496900, 1751583300, 1751669700, 1751756100, 1751842500, 1751928900, 1752015300, 1752101700, 1752188100, 1752274500, 1752360900, 1752447300, 1752533700, 1752620100, 1752706500, 1752792900, 1752879300, 1752965700, 1753052100, 1753138500, 1753224900, 1753311300, 1753397700, 1753484100, 1753570500, 1753656900, 1753743300, 1753829700, 1753916100, 1754002500]
 
 start_aug2025 = [1754020800, 1754107200, 1754193600, 1754280000, 1754366400, 1754452800, 1754539200, 1754625600, 1754712000, 1754798400, 1754884800, 1754971200, 1755057600, 1755144000, 1755230400, 1755316800, 1755403200, 1755489600, 1755576000, 1755662400, 1755748800, 1755835200, 1755921600, 1756008000, 1756094400, 1756180800, 1756267200, 1756353600, 1756440000, 1756526400, 1756612800]
 end_aug2025 = [1754088900, 1754175300, 1754261700, 1754348100, 1754434500, 1754520900, 1754607300, 1754693700, 1754780100, 1754866500, 1754952900, 1755039300, 1755125700, 1755212100, 1755298500, 1755384900, 1755471300, 1755557700, 1755644100, 1755730500, 1755816900, 1755903300, 1755989700, 1756076100, 1756162500, 1756248900, 1756335300, 1756421700, 1756508100, 1756594500, 1756680900]
@@ -120,7 +123,7 @@ end_jul2026_1_to_11 = [1782946500, 1783032900, 1783119300, 1783205700, 178329210
 
 
 # create data files and store them in given directory
-def generateFiles(folder, items):
+def generateFiles(folder, items, isInv):
     # loop through each inverter, so that each inverter will have its own file
     for k, v in items:
         # start script to request data
@@ -177,8 +180,11 @@ def generateFiles(folder, items):
 
         # provide filename
         name = v.split()
-        filename = f"{folder}\{name[2] + name[3]}.csv"
-        #filename = f'{folder}.csv'
+        filename = ""
+        if isInv:
+            filename = f"{folder}\{name[2] + name[3]}.csv" # for inverters
+        else:
+            filename = f'{folder}.csv' # for irradiance
         print(filename) # not necessary, but nice to see
         process.stdin.write(f"{filename}\n")
         process.stdin.flush()
@@ -190,9 +196,10 @@ def generateFiles(folder, items):
             doneConf += char
         print(doneConf, end="")
 
-monthYear = 'May2025'
+monthYear = 'July2025'
 
-generateFiles(f'Data\\ActivePower\\{monthYear}', ProdIds.inverter_active_powers_partial.items())
+#generateFiles(f'Data\\ActivePower\\{monthYear}', ProdIds.inverter_active_powers.items(), True)
+generateFiles(f'Data\\Irradiance\\{monthYear}', ProdIds.irradiance.items(), False)
 
 firsts = []
 lasts = []
@@ -358,4 +365,130 @@ def seeNoAndLowDataDays(start, end, invNum=1):
     print(f'No data: {noData}')
     print(f'\nLow data: {lowData}')
 
-#seeNoAndLowDataDays(start_jul2026_1_to_11, end_jul2026_1_to_11, 50)
+# same as findDaysWithoutData() but for irradiance
+def findDaysWithoutDataIrradiance(start, end):
+    key = '27986'
+    val = 'Plant Irradiance (GHI)'
+                    
+    noDataDays = []
+    tooLittleDataDays = []
+    
+    # loop through every day
+    for i in range(0, len(start)):
+        print('\n\n', i)
+        # start script to request data
+        process = subprocess.Popen(
+            ['python', 'Data_Retrieval\GetPowerData.py'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        # get prompt that asks for ID
+        promptID = ''
+        while 'Enter numerical ID: ' not in promptID:
+            char = process.stdout.read(1)
+            promptID += char
+        print(promptID, end="") # print the prompt
+
+        # provide id
+        print(key) # not necessary, but nice to see
+        process.stdin.write(f"{key}\n")
+        process.stdin.flush()
+
+        # get prompt that asks for value
+        promptVal = ''
+        while 'Enter the name you would like to use: ' not in promptVal:
+            char = process.stdout.read(1)
+            promptVal += char
+        print(promptVal, end="") # print the prompt
+
+        # provide value
+        print(val) # not necessary, but nice to see
+        process.stdin.write(f"{val}\n")
+        process.stdin.flush()
+
+        # get prompt that asks if user would like to add more ids
+        promptUseID = ""
+        while "Would you like to add more ids? " not in promptUseID:
+            char = process.stdout.read(1)
+            promptUseID += char
+        print(promptUseID, end="")
+
+        # respond
+        print("n")
+        process.stdin.write("n\n")
+        process.stdin.flush()
+
+        # get prompt that asks for output file name
+        promptID = ''
+        while 'What should the output file name be? ' not in promptID:
+            char = process.stdout.read(1)
+            promptID += char
+        print(promptID, end="") # print the prompt
+
+        # provide filename
+        filename = "DataRequest\\Test.csv"
+        print(filename) # not necessary, but nice to see
+        process.stdin.write(f"{filename}\n")
+        process.stdin.flush()
+
+        # get prompt that asks for start time
+        promptUseID = ""
+        while "Give a start time (unix) " not in promptUseID:
+            char = process.stdout.read(1)
+            promptUseID += char
+        print(promptUseID, end="")
+
+        # respond
+        print(f"\n{start[i]}")
+        process.stdin.write(f"{start[i]}\n")
+        process.stdin.flush()
+
+        # get prompt that asks for end time
+        promptUseID = ""
+        while "Give an end time (unix) " not in promptUseID:
+            char = process.stdout.read(1)
+            promptUseID += char
+        print(promptUseID, end="")
+
+        # respond
+        print(f"\n{end[i]}")
+        process.stdin.write(f"{end[i]}\n")
+        process.stdin.flush()
+        
+        # get confirmation that data was fetched, or add day to list of no data days if it takes too long
+        doneConf = ""
+        start_time = time.perf_counter()
+        tooLong = False
+        while "Done fetching data" not in doneConf and time.perf_counter() - start_time < 5:
+            char = process.stdout.read(1)
+            doneConf += char
+        if "Done fetching data" in doneConf:
+            print(doneConf, end="")
+        else:
+            tooLong = True
+            noDataDays.append(i)
+
+        if not tooLong and checkIfTooLittleData(filename):
+            tooLittleDataDays.append(i)
+    
+    return [noDataDays, tooLittleDataDays]
+
+# same as seeNoAndLowDataDays() but for irradiance
+def seeNoAndLowDataDaysIrradiance(start, end):
+    res = findDaysWithoutDataIrradiance(start, end)
+    noData = res[0]
+    lowData = res[1]
+    print()
+    print(sorted(firsts))
+    print(sorted(lasts))
+    print(f'No data: {noData}')
+    print(f'\nLow data: {lowData}')
+
+
+s = [1751342400, 1751428800, 1751515200, 1751601600, 1751688000, 1751774400, 1751860800, 1751947200, 1752033600, 1752120000, 1752206400, 1752292800, 1752379200, 1752465600, 1752552000, 1752638400, 1752724800, 1752811200, 1752897600, 1752984000, 1753070400, 1753156800, 1753243200, 1753329600, 1753416000, 1753502400, 1753588800, 1753675200, 1753761600, 1753848000, 1753934400]
+e = [1751410500, 1751496900, 1751583300, 1751669700, 1751756100, 1751842500, 1751928900, 1752015300, 1752101700, 1752188100, 1752274500, 1752360900, 1752447300, 1752533700, 1752620100, 1752706500, 1752792900, 1752879300, 1752965700, 1753052100, 1753138500, 1753224900, 1753311300, 1753397700, 1753484100, 1753570500, 1753656900, 1753743300, 1753829700, 1753916100, 1754002500]
+
+#seeNoAndLowDataDays(s, e)

@@ -6,15 +6,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-invNum = 5
-monthYear = 'July2025'
+monthYear = 'August2025'
 
-df = pd.read_csv(f"Data\ActivePower\{monthYear}\Inverter{invNum}.csv", skipinitialspace=True)
+df = pd.read_csv(f"Data\Irradiance\{monthYear}.csv", skipinitialspace=True)
 df = df.dropna(axis=1, how="all") # drops extra empty column caused by trailing commas
 
 fig, ax = plt.subplots(figsize=(12, 6))
 
-for i in range(18, 20, 2): # to see part of month
+for i in range(0, 10, 2): # to see part of month
 #for i in range(0, df.shape[1], 2): # to see whole month
     timestamps = pd.to_datetime(df.iloc[:, i])
     values = pd.to_numeric(df.iloc[:, i + 1], errors="coerce")
@@ -30,8 +29,8 @@ for i in range(18, 20, 2): # to see part of month
     ax.plot(time_of_day, values, label=day_label)
 
 ax.set_xlabel("Time of Day")
-ax.set_ylabel(f"Active Power (kW)")
-ax.set_title(f"Inverter {invNum} by Day")
+ax.set_ylabel(f"Irradiance")
+ax.set_title(f"Irradiance by Day")
 
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
 ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))

@@ -41,11 +41,11 @@ def showAvgs(filepath, first, last):
     plt.tight_layout()
     plt.show()
 
-monthYear = 'May2025'
+monthYear = 'September2025'
 
 filepath = f"Data_Analysis\ActivePowerAverages\\Unfiltered\\{monthYear}APAvgs.csv"
 #showAvgs(63, 67)
 #showAvgs(filepath, 1, 75)
 
 filepath = f"Data_Analysis\ActivePowerAverages\\FaultyDataDaysRemoved\\{monthYear}APAvgs.csv"
-showAvgs(filepath, 1, 68)
+showAvgs(filepath, 1, 75)
