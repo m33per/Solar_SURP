@@ -5,7 +5,7 @@
 import pandas as pd
 
 # time interval to work with
-monthYear = 'December2025'
+monthYear = 'May2025'
 
 # file to contain avgs
 avg_csv = pd.read_csv(f'Data_Analysis\\ActivePowerAverages\\FaultyDataDaysRemoved\{monthYear}APAvgs.csv', index_col=1)

@@ -4,7 +4,7 @@ monthYear = 'November2025'
 
 # get list of strings of inverters outside ranges
 def getResults(monthYear):
-    df = pd.read_csv(f'Data_Analysis\MathingIt\Slopes\{monthYear}Slopes.csv')
+    df = pd.read_csv(f'Data_Analysis\MathingIt\Slopes\{monthYear}.csv')
 
     # calculate numbers to use as boundaries for notable data
     summary = df['Time'].describe()

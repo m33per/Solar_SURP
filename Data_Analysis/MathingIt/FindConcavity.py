@@ -1,54 +1,62 @@
-# given a file of average power data over one month for every inverter along with the time that each sunset
-# drop starts, find a quadratic of best fit for the sunset decline
+# this code finds a quadratic of best fit for the sunset decline for each inverter on given days
 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import json
+from pathlib import Path
 
-monthYear = 'November2025'
-output_file = f'Data_Analysis\MathingIt\Concavities\{monthYear}Concavity.csv'
-filepath_slopes = f'Data_Analysis\MathingIt\Slopes\{monthYear}Slopes.csv'
-filepath_data = f"Data_Analysis\ActivePowerAverages\\FaultyDataDaysRemoved\\{monthYear}APAvgs.csv"
+config_path = Path("config.json")
+with open(config_path, "r") as file:
+    config = json.load(file)
+
+monthYear = 'September2025'
+
+output_file = f'Data_Analysis\MathingIt\Concavities\{monthYear}.csv'
+filepath_slopes = f'Data_Analysis\MathingIt\Slopes\{monthYear}.csv'
+activePowerFolder = f'Data\\ActivePower\\{monthYear}\\'
 
 df_slopes = pd.read_csv(filepath_slopes)
-df_data = pd.read_csv(filepath_data)
-
-# get each inverter and its corresponding start and end data points to generate the quadratic of best fit
-def getCurveStartAndEndForEachInverter(df_slopes, df_data):
-    curve_endpoints = {}
-
-    # loop through each inverter
-    for i, r in df_slopes.iterrows():
-        # get inverter's curve's start time
-        name = r['Inverter']
-        start = r['Time']
-        end = 0
-
-        # get inverter's curve's end time (first 0.0 after start time)
-        invAP = df_data[f'Active Power {name} (kW)']
-        for i in range(start + 1, len(invAP)):
-            if invAP[i] == 0:
-                end = i
-                break
-
-        curve_endpoints[name] = [start, end]
-    
-    return curve_endpoints
 
 # get dataframe and coefficients for line of best fit for given inverter
-def getCoefficients(inv, df_slopes, df_data, showGraph=False):
-    curves = getCurveStartAndEndForEachInverter(df_slopes, df_data)
-    start = curves[f'Inverter {inv}'][0]
-    end = curves[f'Inverter {inv}'][1]
+def getCoefficients(df_data, day, startTime, showGraph=False):
+    activePowers = []
+    endTimeIndex = 0
+    startTimeIndex = 0
+
+    # get end time for curve, which is first time after start time that active power is < 5
+    for i, (col_name, col_data) in enumerate(df_data.items()):
+        # desired day found
+        if "Time Stamp" in col_name and col_data[0].split()[0] == day:
+            startTimePassed = False
+            for k in range(len(col_data)):
+                if col_data[k].split()[1] == startTime:
+                    startTimeIndex = k
+                    startTimePassed = True
+                if not startTimePassed:
+                    continue
+
+                power_data = df_data.iloc[:, i + 1]
+                if power_data[k] < 5:
+                    endTime = col_data[k]
+                    endTimeIndex = k
+                    activePowers = power_data[startTimeIndex:endTimeIndex + 1].to_list()
+                    break
+            break
+
 
     # get data for one inverter to generate curve
     data = {
-        'times': list(range(start, end + 1)),
-        'aps': df_data[f'Active Power Inverter {inv} (kW)'][start:end + 1].to_list()
+        'times': list(range(startTimeIndex, endTimeIndex + 1)),
+        'aps': activePowers
     }
-    df_curve = pd.DataFrame(data)
-
-    coefficients = np.polyfit(df_curve['times'], df_curve['aps'], 2)
+    coefficients = [0,0,0]
+    df_curve = None
+    if len(data['times']) != len(data['aps']):
+        showGraph = False
+    else:
+        df_curve = pd.DataFrame(data)
+        coefficients = np.polyfit(df_curve['times'], df_curve['aps'], 2)
 
     if showGraph:
         # code copied and slightly modified from google ai
@@ -72,23 +80,35 @@ def getCoefficients(inv, df_slopes, df_data, showGraph=False):
 
     return coefficients
 
+#getCoefficients(df_data, '2025-07-01', '18:25:00', True)
+
 # make csv storing each inverter and its quadratic line of best fit's second derivative
-def generateCSV(name, df_slopes, df_data):
-    # loop through all inverters to find second derivative
-    inverters = []
-    second_d = []
+def generateCSV(monthYear, df_st, days):
+    # one column for inverters, one column per day for second derivative
+    data = {'Inverter': []}
+    for day in days:
+        data[f'{day} D2'] = []
+
+    # loop through each inverter
     for i in range(1, 76):
-        res = getCoefficients(i, df_slopes, df_data)
-        inverters.append(f'Inverter {i}')
-        second_d.append(res[0] * 2)
+        data['Inverter'].append(f'Inverter {i}')
+        df = pd.read_csv(f'Data\\ActivePower\\{monthYear}\\Inverter{i}.csv')
 
-    data = {
-        'Inverter': inverters,
-        'D2': second_d
-    }
-    df_new = pd.DataFrame(data)
+        # find index for this inverter in slopes and times csv file
+        index = None
+        for k in range(len(df_st['Inverter'])):
+            if df_st['Inverter'][k] == f'Inverter {i}':
+                index = k
+                break
 
+        # loop through each day
+        for day in days:
+            startTime = df_st[f'{day} Time'][k]
+            res = getCoefficients(df, day, startTime)
+            data[f'{day} D2'].append(res[0] * 2)
+        
     # create csv file
-    df_new.to_csv(name, index=False)
+    df_new = pd.DataFrame(data)
+    df_new.to_csv(f'Data_Analysis\MathingIt\Concavities\{monthYear}.csv', index=False)
 
-generateCSV(output_file, df_slopes, df_data)
+#generateCSV(output_file, activePowerFolder, df_slopes, config["days"][monthYear])

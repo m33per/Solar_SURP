@@ -31,3 +31,24 @@ Step 1: find good days. first find area under graphs for each day to calculate
 Step 2: plug those days into the bad slope analysis
         plug those days into bad concavity analysis. Make quadratic start at point of
         inflection. Make it end before 0, so when power is at like 5 kW
+
+
+Create a tool now:
+
+implement later:
+    be able to pull data
+    -maybe just stick with monthly divisions
+
+basic page:
+    select inverters and a day to view graph
+    select inverter and days to view graph
+    select irradiance and a days to view graph
+
+sunset page:
+    select month, get list of days that are likely uncloudy by irradiance
+    pick a day, run code and identify shady areas
+
+config page:
+    select which days to save (or delete) as good days
+    for each month, alter thresholds for bad slope and concavity
+    for each month, alter beginning sunset end ending sunrise times

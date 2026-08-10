@@ -1,15 +1,13 @@
 import pandas as pd
 from CalcEnergy import getEnergy
+import json
+from pathlib import Path
+
+config_path = Path("config.json")
+with open(config_path, "r") as file:
+    config = json.load(file)
 
 monthYear = 'July2025'
-days = ['2025-07-01', '2025-07-04',
-        '2025-07-10', '2025-07-11', 
-        '2025-07-18', '2025-07-19', 
-        '2025-07-29', '2025-07-30']
-times = ['16:45:00']
-output_file = f'Data_Analysis\\EnergyComparisons\\{monthYear}SunsetEnergies.csv'
-
-df = pd.DataFrame()
 
 # make inverter column
 def makeInvCol(df):
@@ -25,8 +23,11 @@ def makeEnergies(df, monthYear, day, time):
         energies.append(round(getEnergy(monthYear, i, day, time), 2))
     df[f'{day} {time}'] = energies
 
-makeInvCol(df)
-for day in days:
-    makeEnergies(df, monthYear, day, times[0])
+'''output_file = f'Data_Analysis\\EnergyComparisons\\{monthYear}SunsetEnergies.csv'
+df = pd.DataFrame()
 
-df.to_csv(output_file, index=False)
+makeInvCol(df)
+for day in config["days"][monthYear]:
+    makeEnergies(df, monthYear, day, config["sunsetTimes"][monthYear])
+
+df.to_csv(output_file, index=False)'''

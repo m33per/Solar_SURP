@@ -8,38 +8,44 @@ import matplotlib.dates as mdates
 
 monthYear = 'August2025'
 
-df = pd.read_csv(f"Data\Irradiance\{monthYear}.csv", skipinitialspace=True)
-df = df.dropna(axis=1, how="all") # drops extra empty column caused by trailing commas
+def showGraph(monthYear, days=None):
+    df = pd.read_csv(f"Data\Irradiance\{monthYear}.csv", skipinitialspace=True)
+    df = df.dropna(axis=1, how="all") # drops extra empty column caused by trailing commas
 
-fig, ax = plt.subplots(figsize=(12, 6))
+    fig, ax = plt.subplots(figsize=(12, 6))
 
-for i in range(0, 10, 2): # to see part of month
-#for i in range(0, df.shape[1], 2): # to see whole month
-    timestamps = pd.to_datetime(df.iloc[:, i])
-    values = pd.to_numeric(df.iloc[:, i + 1], errors="coerce")
+    if days == None:
+        days = []
+        for i in range(0, df.shape[1], 2):
+            days.append(int((i + 2) / 2))
 
-    # Use the actual date only for the label
-    day_label = timestamps.iloc[0].strftime("%Y-%m-%d")
+    for day in days:
+        i = (day - 1) * 2
+        timestamps = pd.to_datetime(df.iloc[:, i])
+        values = pd.to_numeric(df.iloc[:, i + 1], errors="coerce")
 
-    # Put every timestamp on the same fake date
-    time_of_day = timestamps.apply(
-        lambda t: t.replace(year=2000, month=1, day=1)
-    )
+        # Use the actual date only for the label
+        day_label = timestamps.iloc[0].strftime("%Y-%m-%d")
 
-    ax.plot(time_of_day, values, label=day_label)
+        # Put every timestamp on the same fake date
+        time_of_day = timestamps.apply(
+            lambda t: t.replace(year=2000, month=1, day=1)
+        )
 
-ax.set_xlabel("Time of Day")
-ax.set_ylabel(f"Irradiance")
-ax.set_title(f"Irradiance by Day")
+        ax.plot(time_of_day, values, label=day_label)
 
-ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
-ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
+    ax.set_xlabel("Time of Day")
+    ax.set_ylabel(f"Irradiance")
+    ax.set_title(f"Irradiance by Day")
 
-plt.xticks(rotation=45)
-ax.grid(True)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+    ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
 
-# For 30 days, put legend outside the plot
-ax.legend(title="Day", bbox_to_anchor=(1.02, 1), loc="upper left")
+    plt.xticks(rotation=45)
+    ax.grid(True)
 
-plt.tight_layout()
-plt.show()
+    # For 30 days, put legend outside the plot
+    ax.legend(title="Day", bbox_to_anchor=(1.02, 1), loc="upper left")
+
+    plt.tight_layout()
+    plt.show()

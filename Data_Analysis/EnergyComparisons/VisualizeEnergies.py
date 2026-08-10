@@ -1,14 +1,16 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import json
+from pathlib import Path
+
+config_path = Path("config.json")
+with open(config_path, "r") as file:
+    config = json.load(file)
 
 monthYear = 'July2025'
+dayNum = 0
 
 # July2025 info
-days = ['2025-07-01', '2025-07-04',
-        '2025-07-10', '2025-07-11', 
-        '2025-07-18', '2025-07-19', 
-        '2025-07-29', '2025-07-30']
-times = ['16:45:00']
 bad_invs = [44, 46, 47, 48, 58, 59, 60, 61, 62, 63, 64, 65, 72, 73]
 colors = []
 for i in range(75):
@@ -28,6 +30,9 @@ def makeGraph(monthYear, day, time, firstInv, lastInv):
 
     df.plot(kind='bar', x='Inverter', y='Energy (kWh)', color=colors[firstInv:lastInv], legend=False)
     plt.title(f'Energy Comparisons for {day} from {time}')
+
     plt.show()
 
-makeGraph(monthYear, days[3], times[0], 1, 75)
+'''for day in config["days"][monthYear]:
+    makeGraph(monthYear, day, config["sunsetTimes"][monthYear], 1, 75)
+    '''
