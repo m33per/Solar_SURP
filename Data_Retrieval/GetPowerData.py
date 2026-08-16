@@ -22,9 +22,7 @@ def multTimeInts(outputFileName, start, end, prod_id, justOneInt=False):
     gt = goldtree.RequestManager(prod_id)      #Get auth key from API
     gt.authentication_status
 
-    # just one interval
     if justOneInt:
-        #res = GetTimesFromUser.get_times() # request start and end times from user
         res = GetTimesFromUser.get_times_unix()
         start = res[0]
         end = res[1]
@@ -63,15 +61,6 @@ def multTimeInts(outputFileName, start, end, prod_id, justOneInt=False):
                 k += 1
             txt_file.write("\n")
             i += 1
-
-if __name__ == '__main__':
-    outputFileName = input("What should the output file name be? ")
-
-    start = [1748750400, 1748836800, 1748923200, 1749009600, 1749096000, 1749182400, 1749268800, 1749355200, 1749441600, 1749528000, 1749614400, 1749700800, 1749787200, 1749873600, 1749960000, 1750046400, 1750132800, 1750219200, 1750305600, 1750392000, 1750478400, 1750564800, 1750737600, 1750824000, 1750910400, 1750996800, 1751083200, 1751169600, 1751256000]
-    end = [1748818500, 1748904900, 1748991300, 1749077700, 1749164100, 1749250500, 1749336900, 1749423300, 1749509700, 1749596100, 1749682500, 1749768900, 1749855300, 1749941700, 1750028100, 1750114500, 1750200900, 1750287300, 1750373700, 1750460100, 1750546500, 1750632900, 1750805700, 1750892100, 1750978500, 1751064900, 1751151300, 1751237700, 1751324100]
-
-
-    multTimeInts(outputFileName, start, end)
         
 #----------------------------------------------------------------------------------
 # Single Time Interval 

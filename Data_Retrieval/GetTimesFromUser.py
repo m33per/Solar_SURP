@@ -1,7 +1,6 @@
 # Get start and end times from user in a more human-friendly format to pass into the GetPowerData script
 
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
 # get a time from user and return its unix timestamp
 def get_time():

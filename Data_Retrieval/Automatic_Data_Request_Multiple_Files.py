@@ -183,8 +183,3 @@ class DataPull:
         print(f'Low data: {lowData}')
 
         self.badDays = noData + lowData
-
-    if __name__ == '__main__':
-        pass
-        #seeNoAndLowDataDaysInv('05', '2025')
-        #seeNoAndLowDataDaysIrradiance('05', '2025')
