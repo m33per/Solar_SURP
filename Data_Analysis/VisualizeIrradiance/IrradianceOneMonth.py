@@ -1,6 +1,6 @@
-# Note: I used ChatGPT with my Cal Poly account to generate a lot of the code for this file.
-# This code is used to generate a graph for the active power or energy of one inverter over
-# some interval of days, where each day is its own line.
+'''Note: I used ChatGPT with my Cal Poly account to generate a lot of the code for this file.
+ This code is used to generate a graph for the active power or energy of one inverter over
+ some interval of days, where each day is its own line.'''
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,11 +13,6 @@ def showGraph(monthYear, daysFromUser=None):
     df = df.dropna(axis=1, how="all") # drops extra empty column caused by trailing commas
 
     fig, ax = plt.subplots(figsize=(12, 6))
-
-    '''if days == None:
-        days = []
-        for i in range(0, df.shape[1], 2):
-            days.append(int((i + 2) / 2))'''
 
     days = []
     if daysFromUser == None: # if no days, set days to all days in month

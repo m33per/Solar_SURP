@@ -2,8 +2,6 @@ import pandas as pd
 import json
 from pathlib import Path
 
-monthYear = 'July2025'
-
 # get list of strings of inverters outside ranges
 def getResults(monthYear, day):
     config_path = Path("config.json")
@@ -12,9 +10,8 @@ def getResults(monthYear, day):
 
     df = pd.read_csv(f'Data_Analysis\MathingIt\Slopes\{monthYear}.csv')
 
-    # calculate numbers to use as boundaries for notable data
+    # calculate number to use as boundary for outliers
     summary = df[f'{day} Slope'].describe()
-    notableRange = summary['25%'] - (0 * (summary['75%'] - summary['25%']))
     outlierRange = summary['25%'] - (1.5 * (summary['75%'] - summary['25%']))
 
     results = []
@@ -22,6 +19,8 @@ def getResults(monthYear, day):
     # loop through each inverter and its slope
     for i, r in df.iterrows():
         note = ''
+
+        # note inverter if value meets configured threshold
         if r[f'{day} Slope'] < config["slopeCutOffs"][monthYear]:#notableRange:
             note = f"{r['Inverter']} {r[f'{day} Slope']}"
             if r[f'{day} Slope'] < outlierRange:
@@ -36,9 +35,3 @@ def printResults(monthYear, day):
     res = getResults(monthYear,day)
     for r in res:
         print(r)
-
-if __name__ == '__main__':
-    config_path = Path("config.json")
-    with open(config_path, "r") as file:
-        config = json.load(file)
-    printResults(monthYear, config["days"][monthYear][1])

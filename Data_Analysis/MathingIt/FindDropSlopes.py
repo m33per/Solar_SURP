@@ -1,17 +1,8 @@
-# this code finds the steepest downward slope and the associated times for each inverter on given days
+'''This code finds the steepest downward slope and the associated times for each inverter on given days.'''
 
 import pandas as pd
 import numpy as np
-import json
-from pathlib import Path
 
-'''config_path = Path("config.json")
-with open(config_path, "r") as file:
-    config = json.load(file)'''
-
-monthYear = 'September2025'
-outputFile = f'Data_Analysis\MathingIt\\Slopes\\{monthYear}.csv'
-inputFileFolder = f'Data\\ActivePower\\{monthYear}\\'
 
 # get steepest downward slope and associated times for given inverter on given day from given sunset time
 # this is caluclated data points 5 time intervals apart, and the associated time is the middle time
@@ -48,10 +39,7 @@ def getSlopeAndTimesForInverter(df, day, sunsetTime):
 
     return [round(steepestSlope, 2), steepestTimes]
 
-'''df = pd.read_csv('Data\\ActivePower\\July2025\\Inverter75.csv')
-res = getSlopeAndTimesForInverter(df, config["days"]['July2025'][0], config["sunsetTimes"]['July2025'])
-print(res)'''
-
+# make csv storing each inverter and its steepest downward slope and corresponding time
 def generateCSV(monthYear, sunsetTime):
     # structure to hold data: one inverter column and two columns per day - slope and time
     data = {'Inverter': []}
@@ -82,20 +70,3 @@ def generateCSV(monthYear, sunsetTime):
     # create csv file
     df_new = pd.DataFrame(data)
     df_new.to_csv(f'Data_Analysis\MathingIt\\Slopes\\{monthYear}.csv', index=False)
-
-times = {"January2025": "13:50:00",
-"February2025": "14:00:00",
-"March2025": "14:20:00",
-"April2025": "15:45:00",
-"May2025": "16:00:00",
-"June2025": "16:20:00",
-"July2025": "16:30:00",
-"August2025": "16:10:00",
-"September2025": "15:40:00",
-"October2025": "15:10:00",
-"November2025": "13:50:00",
-"December2025": "13:50:00"}
-
-mY = 'February2025'
-#generateCSV(mY, times[mY])
-#generateCSV(outputFile, inputFileFolder, config["days"][monthYear], config["sunsetTimes"][monthYear])

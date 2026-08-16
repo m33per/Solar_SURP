@@ -1,7 +1,5 @@
 # script to find days in given month that were likely not cloudy based on irradiance
 import pandas as pd
-import json
-from pathlib import Path
 
 monthYear = 'August2025'
 
@@ -40,13 +38,3 @@ def getGoodDays(df, sunsetTime):
                 goodDays.append(col_data[0].split()[0])
 
     return goodDays
-
-
-'''
-config_path = Path("config.json")
-with open(config_path, "r") as file:
-    config = json.load(file)
-    
-sunsetTime = findSunsetTimeIndex(df, config["sunsetTimes"][monthYear])
-goodDays = getGoodDays(df, sunsetTime)
-print(goodDays)'''

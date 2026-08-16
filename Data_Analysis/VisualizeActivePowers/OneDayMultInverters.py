@@ -1,12 +1,8 @@
+'''Graph the given inverters active power data for the given day.'''
+
 import pandas as pd
 import matplotlib.pyplot as plt
-import json
-from pathlib import Path
 import matplotlib.dates as mdates
-
-monthYear = 'July2025'
-dayNum = 0
-
 
 def makeGraph(monthYear, day, invNums=[]):
     fig, ax = plt.subplots(figsize=(12, 6))

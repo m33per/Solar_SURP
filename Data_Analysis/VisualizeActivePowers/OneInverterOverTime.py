@@ -1,13 +1,11 @@
-# Note: I used ChatGPT with my Cal Poly account to generate a lot of the code for this file.
-# This code is used to generate a graph for the active power or energy of one inverter over
-# some interval of days, where each day is its own line.
+'''Note: I used ChatGPT with my Cal Poly account to generate a lot of the code for this file.
+This code is used to generate a graph for the active power or energy of one inverter over
+some interval of days, where each day is its own line'''
+
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-
-invNum = 5
-monthYear = 'May2025'
 
 def showGraph(monthYear, invNum, daysFromUser=None):
     df = pd.read_csv(f"Data\ActivePower\{monthYear}\Inverter{invNum}.csv", skipinitialspace=True)
@@ -55,6 +53,3 @@ def showGraph(monthYear, invNum, daysFromUser=None):
 
     plt.tight_layout()
     plt.show()
-
-if __name__ == '__main__':
-    showGraph(monthYear, invNum, [1])

@@ -1,0 +1,23 @@
+# csv files
+*.csv
+
+# pycache
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# Environment secrets
+.env
+.env.local
+
+# Production and Build outputs
+dist/
+build/
+out/
+*.exe
+*.dmg
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*

@@ -49,10 +49,7 @@ def makeFile(monthYear):
     with open(config_path, "r") as file:
         config = json.load(file)
         
-    output_file = f'Data_Analysis\\EnergyComparisons\\{monthYear}SunsetEnergies.csv'
+    output_file = f'Data_Analysis\\EnergyComparisons\\SunsetEnergies\\{monthYear}.csv'
 
     df = makeEnergies(monthYear, config["sunsetTimes"][monthYear])
-    '''for day in config["days"][monthYear]:
-        makeEnergies(df, monthYear, day, config["sunsetTimes"][monthYear])'''
-
     df.to_csv(output_file, index=False)

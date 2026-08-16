@@ -3,16 +3,6 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import json
-from pathlib import Path
-
-monthYear = 'September2025'
-
-output_file = f'Data_Analysis\MathingIt\Concavities\{monthYear}.csv'
-filepath_slopes = f'Data_Analysis\MathingIt\Slopes\{monthYear}.csv'
-activePowerFolder = f'Data\\ActivePower\\{monthYear}\\'
-
-df_slopes = pd.read_csv(filepath_slopes)
 
 # get dataframe and coefficients for line of best fit for given inverter
 def getCoefficients(df_data, day, startTime, showGraph=False):
@@ -76,8 +66,6 @@ def getCoefficients(df_data, day, startTime, showGraph=False):
 
     return coefficients
 
-#getCoefficients(df_data, '2025-07-01', '18:25:00', True)
-
 # make csv storing each inverter and its quadratic line of best fit's second derivative
 def generateCSV(monthYear):
     # one column for inverters, one column per day for second derivative
@@ -117,24 +105,3 @@ def generateCSV(monthYear):
     # create csv file
     df_new = pd.DataFrame(data)
     df_new.to_csv(f'Data_Analysis\MathingIt\Concavities\{monthYear}.csv', index=False)
-
-times = {"January2025": "13:50:00",
-"February2025": "14:00:00",
-"March2025": "14:20:00",
-"April2025": "15:45:00",
-"May2025": "16:00:00",
-"June2025": "16:20:00",
-"July2025": "16:30:00",
-"August2025": "16:10:00",
-"September2025": "15:40:00",
-"October2025": "15:10:00",
-"November2025": "13:50:00",
-"December2025": "13:50:00"}
-
-mY = 'March2025'
-#generateCSV(mY)
-
-'''config_path = Path("config.json")
-with open(config_path, "r") as file:
-    config = json.load(file)
-generateCSV(output_file, activePowerFolder, df_slopes, config["days"][monthYear])'''
