@@ -6,10 +6,6 @@ import matplotlib.pyplot as plt
 import json
 from pathlib import Path
 
-config_path = Path("config.json")
-with open(config_path, "r") as file:
-    config = json.load(file)
-
 monthYear = 'September2025'
 
 output_file = f'Data_Analysis\MathingIt\Concavities\{monthYear}.csv'
@@ -29,7 +25,7 @@ def getCoefficients(df_data, day, startTime, showGraph=False):
         # desired day found
         if "Time Stamp" in col_name and col_data[0].split()[0] == day:
             startTimePassed = False
-            for k in range(len(col_data)):
+            for k in range(len(col_data) - 1):
                 if col_data[k].split()[1] == startTime:
                     startTimeIndex = k
                     startTimePassed = True
@@ -83,14 +79,25 @@ def getCoefficients(df_data, day, startTime, showGraph=False):
 #getCoefficients(df_data, '2025-07-01', '18:25:00', True)
 
 # make csv storing each inverter and its quadratic line of best fit's second derivative
-def generateCSV(monthYear, df_st, days):
+def generateCSV(monthYear):
     # one column for inverters, one column per day for second derivative
     data = {'Inverter': []}
-    for day in days:
-        data[f'{day} D2'] = []
+    days = [] # to keep track of the days that exist
+
+    df_st = pd.read_csv(f'Data_Analysis\\MathingIt\\Slopes\\{monthYear}.csv')
+    
+    # make space for slope and time columns for each day for which data exists
+    df_power = pd.read_csv(f'Data\\ActivePower\\{monthYear}\\Inverter1.csv')
+    for i, (col_name, col_data) in enumerate(df_power.items()):
+        if "Time Stamp" in col_name: # in a time column
+            day = col_data[0].split()[0]
+            days.append(day)
+            data[f'{day} D2'] = []
 
     # loop through each inverter
+    print('\ncalculating concavities')
     for i in range(1, 76):
+        print(f'inverter {i}')
         data['Inverter'].append(f'Inverter {i}')
         df = pd.read_csv(f'Data\\ActivePower\\{monthYear}\\Inverter{i}.csv')
 
@@ -103,7 +110,7 @@ def generateCSV(monthYear, df_st, days):
 
         # loop through each day
         for day in days:
-            startTime = df_st[f'{day} Time'][k]
+            startTime = df_st[f'{day} Time'][index]
             res = getCoefficients(df, day, startTime)
             data[f'{day} D2'].append(res[0] * 2)
         
@@ -111,4 +118,23 @@ def generateCSV(monthYear, df_st, days):
     df_new = pd.DataFrame(data)
     df_new.to_csv(f'Data_Analysis\MathingIt\Concavities\{monthYear}.csv', index=False)
 
-#generateCSV(output_file, activePowerFolder, df_slopes, config["days"][monthYear])
+times = {"January2025": "13:50:00",
+"February2025": "14:00:00",
+"March2025": "14:20:00",
+"April2025": "15:45:00",
+"May2025": "16:00:00",
+"June2025": "16:20:00",
+"July2025": "16:30:00",
+"August2025": "16:10:00",
+"September2025": "15:40:00",
+"October2025": "15:10:00",
+"November2025": "13:50:00",
+"December2025": "13:50:00"}
+
+mY = 'March2025'
+#generateCSV(mY)
+
+'''config_path = Path("config.json")
+with open(config_path, "r") as file:
+    config = json.load(file)
+generateCSV(output_file, activePowerFolder, df_slopes, config["days"][monthYear])'''

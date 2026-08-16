@@ -4,7 +4,6 @@ UI for exploring the Solar_SURP analysis results.
 This file only builds a UI on top of the analysis logic that already lives
 under Data_Analysis/ -- it does not reimplement or modify that logic. It
 imports the following modules and calls their functions directly:
-    Data_Analysis/EnergyComparisons/CalcEnergy.py         -> getEnergy
     Data_Analysis/EnergyComparisons/FindGoodDaysByIrradiance.py
                                         -> findSunsetTimeIndex, getGoodDays
     Data_Analysis/MathingIt/AnalyzeDropSlopes.py           -> getResults
@@ -12,10 +11,13 @@ imports the following modules and calls their functions directly:
     Data_Analysis/EnergyComparisons/VisualizeEnergies.py   -> makeGraph
     Data_Analysis/VisualizeIrradiance/IrradianceOneMonth.py -> showGraph
     Data_Analysis/VisualizeActivePowers/OneInverterOverTime.py -> showGraph
+    Data_Analysis/VisualizeActivePowers/OneDayMultInverters.py -> makeGraph
+    Data_Analysis/MathingIt/FindDropSlopes.py              -> generateCSV
+    Data_Analysis/MathingIt/FindConcavity.py               -> generateCSV
+    Data_Analysis/EnergyComparisons/CompareEnergy.py       -> makeFile
 
 Some other scripts in Data_Analysis/ write/overwrite CSV files as a side
-effect of merely being imported (e.g. the MakeAvgAPCSV.py files,
-FindConcavity.py, FindDropSlopes.py, CompareEnergy.py). Those are
+effect of merely being imported (e.g. the MakeAvgAPCSV.py files). Those are
 intentionally NOT wired into this UI yet -- importing them here would
 trigger those side effects on every app launch.
 """
@@ -24,6 +26,7 @@ import os
 import sys
 import json
 import datetime
+import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
 from pathlib import Path
@@ -47,6 +50,35 @@ for rel_dir in (
     if full not in sys.path:
         sys.path.insert(0, full)
 
+class _ThreadLocalStdout:
+    """Installed once as sys.stdout so a background thread can capture its
+    own print() output (from generateCSV()'s progress prints) without
+    hijacking stdout for the whole process. contextlib.redirect_stdout
+    swaps sys.stdout globally, which would swallow the main thread's (or
+    any other thread's) output for as long as the background thread's
+    capture is active -- this instead routes each thread's writes to
+    whichever buffer that thread registered, falling back to the real
+    stdout for everyone else."""
+
+    def __init__(self, real_stdout):
+        self._real_stdout = real_stdout
+        self._local = threading.local()
+
+    def set_buffer(self, buffer):
+        self._local.buffer = buffer
+
+    def _target(self):
+        return getattr(self._local, "buffer", None) or self._real_stdout
+
+    def write(self, text):
+        return self._target().write(text)
+
+    def flush(self):
+        return self._target().flush()
+
+
+sys.stdout = _ThreadLocalStdout(sys.stdout)
+
 IMPORT_ERRORS = {}
 
 
@@ -58,15 +90,16 @@ def _try_import(module_name):
         return None
 
 
-CalcEnergy = _try_import("CalcEnergy")
 FindGoodDaysByIrradiance = _try_import("FindGoodDaysByIrradiance")
 AnalyzeDropSlopes = _try_import("AnalyzeDropSlopes")
 AnalyzeConcavity = _try_import("AnalyzeConcavity")
 VisualizeEnergies = _try_import("VisualizeEnergies")
 IrradianceOneMonth = _try_import("IrradianceOneMonth")
 OneInverterOverTime = _try_import("OneInverterOverTime")
+OneDayMultInverters = _try_import("OneDayMultInverters")
 FindDropSlopes = _try_import("FindDropSlopes")
 FindConcavity = _try_import("FindConcavity")
+CompareEnergy = _try_import("CompareEnergy")
 
 
 def load_config():
@@ -120,6 +153,37 @@ def parse_day_range(text):
     return sorted(days)
 
 
+def resolve_day_input(day_text, month):
+    """Parse a typed day-of-month (e.g. "15") into the "YYYY-MM-DD" format
+    the Slopes/Concavities/SunsetEnergies CSVs use as column prefixes --
+    shared by every section that lets the user type a bare day-of-month
+    instead of picking from the configured good days (it doesn't have to be
+    one of them). Shows its own warning and returns None on invalid input."""
+    day_text = day_text.strip()
+    if not day_text:
+        messagebox.showwarning("Missing day", "Enter a day of the month.")
+        return None
+    try:
+        day_num = int(day_text)
+    except ValueError:
+        messagebox.showwarning("Invalid day", f"'{day_text}' is not a valid integer day.")
+        return None
+    year, month_num = parse_month_year(month)
+    try:
+        return datetime.date(year, month_num, day_num).isoformat()
+    except ValueError:
+        messagebox.showwarning("Invalid day", f"{month} has no day {day_num}.")
+        return None
+
+
+def good_days_summary(cfg, month):
+    """'["2025-07-01", "2025-07-10"]' -> '1, 10' for a reference label next
+    to a typed-day-of-month field."""
+    good_days = cfg["days"].get(month, [])
+    day_nums = sorted({int(d.split("-")[2]) for d in good_days})
+    return ", ".join(str(n) for n in day_nums) if day_nums else "(none configured)"
+
+
 def make_output_pane(parent, width=28):
     frame = ttk.Frame(parent)
     text = tk.Text(frame, height=14, width=width, wrap="word", state="disabled")
@@ -130,6 +194,67 @@ def make_output_pane(parent, width=28):
     frame.rowconfigure(0, weight=1)
     frame.columnconfigure(0, weight=1)
     return frame, text
+
+
+def show_output_popup(parent, title, text):
+    """Show a scrollable read-only popup for print() output (e.g. progress
+    from a slow analysis call) -- too long to fit in a plain messagebox.
+    Returns (win, text_widget) so a caller doing slow work in a background
+    thread can open this immediately with a placeholder and stream the real
+    output into it live via a _LivePopupWriter -- calling this with the
+    final text only *after* more synchronous work on the main thread isn't
+    enough to make it appear promptly: a single win.update() only pumps
+    Tk's queue at that instant, and Windows won't keep painting a
+    just-created window while the process is then busy for a while outside
+    the Tk event loop. Running the slow work in a thread instead keeps the
+    mainloop free the whole time, which is what actually fixes that."""
+    win = tk.Toplevel(parent)
+    win.title(title)
+    win.geometry("560x420")
+    pane, text_widget = make_output_pane(win)
+    pane.pack(fill="both", expand=True, padx=8, pady=8)
+    text_widget.configure(state="normal")
+    text_widget.insert("1.0", text if text.strip() else "(no output)")
+    text_widget.configure(state="disabled")
+    ttk.Button(win, text="Close", command=win.destroy).pack(pady=(0, 8))
+    win.update()
+    return win, text_widget
+
+
+class _LivePopupWriter:
+    """File-like object that streams print() output into an output popup's
+    Text widget live, as each write happens -- rather than buffering
+    everything and only showing it once the background work finishes. Each
+    write is marshaled onto the UI thread via owner.after(0, ...) since this
+    is written to from a background thread and Tkinter widgets aren't safe
+    to touch from anywhere else. The popup's placeholder text is cleared on
+    the first write; if the popup was already closed, writes are silently
+    dropped (TclError) instead of erroring out the background thread."""
+
+    def __init__(self, owner, text_widget):
+        self._owner = owner
+        self._text_widget = text_widget
+        self._started = False
+
+    def write(self, text):
+        if text:
+            self._owner.after(0, self._append, text)
+        return len(text)
+
+    def flush(self):
+        pass
+
+    def _append(self, text):
+        try:
+            self._text_widget.configure(state="normal")
+            if not self._started:
+                self._started = True
+                self._text_widget.delete("1.0", "end")
+            self._text_widget.insert("end", text)
+            self._text_widget.see("end")
+            self._text_widget.configure(state="disabled")
+        except tk.TclError:
+            pass  # popup was closed before this write arrived
 
 
 def set_output(text_widget, content):
@@ -145,6 +270,25 @@ def close_stray_graph_windows():
     graph is shown successfully -- plt.show() displays every open figure,
     not just the newest one."""
     plt.close("all")
+
+
+def call_with_temp_config_value(top_key, month, temp_value, func, *args):
+    """Call func(*args) with config.json's [top_key][month] temporarily set
+    to temp_value, restoring the original value afterward (even if func
+    raises). Needed because AnalyzeDropSlopes.getResults()/
+    AnalyzeConcavity.getResults() re-read config.json internally on every
+    call rather than taking a cutoff as a parameter, and a UI-entered
+    override must never be persisted to the file."""
+    cfg = load_config()
+    original = cfg[top_key][month]
+    cfg[top_key][month] = temp_value
+    save_config(cfg)
+    try:
+        return func(*args)
+    finally:
+        cfg2 = load_config()
+        cfg2[top_key][month] = original
+        save_config(cfg2)
 
 
 def unavailable_notice(parent, module_name):
@@ -181,8 +325,29 @@ class FlagsTab(ttk.Frame):
 
         ttk.Label(form, text="Day").grid(row=0, column=2, sticky="w", padx=4, pady=4)
         self.day_var = tk.StringVar()
-        self.day_box = ttk.Combobox(form, textvariable=self.day_var, values=[], state="readonly", width=15)
-        self.day_box.grid(row=0, column=3, padx=4, pady=4)
+        ttk.Entry(form, textvariable=self.day_var, width=6).grid(row=0, column=3, sticky="w", padx=4, pady=4)
+
+        self.good_days_var = tk.StringVar()
+        ttk.Label(form, text="Good days:").grid(row=0, column=4, sticky="w", padx=(12, 4), pady=4)
+        ttk.Label(form, textvariable=self.good_days_var, foreground="#666", wraplength=260).grid(
+            row=0, column=5, sticky="w", padx=4, pady=4
+        )
+
+        ttk.Label(form, text="Slope Cutoff").grid(row=1, column=0, sticky="w", padx=4, pady=4)
+        self.slope_cutoff_var = tk.StringVar()
+        ttk.Entry(form, textvariable=self.slope_cutoff_var, width=15).grid(row=1, column=1, padx=4, pady=4)
+
+        ttk.Label(form, text="Concavity Cutoff").grid(row=1, column=2, sticky="w", padx=4, pady=4)
+        self.concavity_cutoff_var = tk.StringVar()
+        ttk.Entry(form, textvariable=self.concavity_cutoff_var, width=15).grid(row=1, column=3, padx=4, pady=4)
+
+        ttk.Label(
+            self,
+            text="Cutoffs auto-fill from Config Editor but are editable here for this run only -- they are never saved back to config.json.",
+            foreground="#666",
+            wraplength=650,
+            justify="left",
+        ).pack(anchor="w", pady=(0, 4))
 
         btns = ttk.Frame(self)
         btns.pack(fill="x", pady=6)
@@ -235,9 +400,10 @@ class FlagsTab(ttk.Frame):
 
     def _on_month_change(self):
         cfg = load_config()
-        days = cfg["days"].get(self.month_var.get(), [])
-        self.day_box.configure(values=days)
-        self.day_var.set(days[0] if days else "")
+        month = self.month_var.get()
+        self.good_days_var.set(good_days_summary(cfg, month))
+        self.slope_cutoff_var.set(cfg["slopeCutOffs"].get(month, 0))
+        self.concavity_cutoff_var.set(cfg["d2CutOffs"].get(month, 0))
 
     @staticmethod
     def _inverter_key(result_line):
@@ -248,12 +414,19 @@ class FlagsTab(ttk.Frame):
         if AnalyzeDropSlopes is None:
             messagebox.showerror("Unavailable", f"AnalyzeDropSlopes failed to import:\n{IMPORT_ERRORS.get('AnalyzeDropSlopes')}")
             return
-        month, day = self.month_var.get(), self.day_var.get()
-        if not day:
-            messagebox.showwarning("Missing day", "This month has no configured days to analyze.")
+        month = self.month_var.get()
+        day = resolve_day_input(self.day_var.get(), month)
+        if day is None:
             return
         try:
-            results = AnalyzeDropSlopes.getResults(month, day)
+            slope_cutoff = float(self.slope_cutoff_var.get())
+        except ValueError:
+            messagebox.showerror("Invalid input", "Slope Cutoff must be a number.")
+            return
+        try:
+            results = call_with_temp_config_value(
+                "slopeCutOffs", month, slope_cutoff, AnalyzeDropSlopes.getResults, month, day
+            )
         except FileNotFoundError:
             messagebox.showerror("Data not found", f"No Slopes CSV found for {month}.")
             return
@@ -268,12 +441,19 @@ class FlagsTab(ttk.Frame):
         if AnalyzeConcavity is None:
             messagebox.showerror("Unavailable", f"AnalyzeConcavity failed to import:\n{IMPORT_ERRORS.get('AnalyzeConcavity')}")
             return
-        month, day = self.month_var.get(), self.day_var.get()
-        if not day:
-            messagebox.showwarning("Missing day", "This month has no configured days to analyze.")
+        month = self.month_var.get()
+        day = resolve_day_input(self.day_var.get(), month)
+        if day is None:
             return
         try:
-            results = AnalyzeConcavity.getResults(month, day)
+            concavity_cutoff = float(self.concavity_cutoff_var.get())
+        except ValueError:
+            messagebox.showerror("Invalid input", "Concavity Cutoff must be a number.")
+            return
+        try:
+            results = call_with_temp_config_value(
+                "d2CutOffs", month, concavity_cutoff, AnalyzeConcavity.getResults, month, day
+            )
         except FileNotFoundError:
             messagebox.showerror("Data not found", f"No Concavities CSV found for {month}.")
             return
@@ -311,191 +491,37 @@ class FlagsTab(ttk.Frame):
         self.compare_frame.pack(fill="both", expand=True, pady=(0, 6))
 
 
-class EnergyGraphsTab(ttk.Frame):
-    """Energy Calculator + Sunset Energy Comparison Graph, stacked in one tab."""
-
-    def __init__(self, parent):
-        super().__init__(parent, padding=10)
-
-        calc_frame = ttk.LabelFrame(self, text="Energy Calculator")
-        calc_frame.pack(fill="x", pady=(0, 10))
-        if CalcEnergy is None:
-            unavailable_notice(calc_frame, "CalcEnergy")
-        else:
-            form = ttk.Frame(calc_frame, padding=8)
-            form.pack(fill="x")
-
-            ttk.Label(form, text="Month").grid(row=0, column=0, sticky="w", padx=4, pady=4)
-            self.calc_month_var = tk.StringVar(value=MONTHS[0])
-            month_box = ttk.Combobox(
-                form, textvariable=self.calc_month_var, values=MONTHS, state="readonly", width=15
-            )
-            month_box.grid(row=0, column=1, padx=4, pady=4)
-            month_box.bind("<<ComboboxSelected>>", lambda e: self._on_calc_month_change())
-
-            ttk.Label(form, text="Inverter").grid(row=0, column=2, sticky="w", padx=4, pady=4)
-            self.calc_inv_var = tk.IntVar(value=1)
-            ttk.Spinbox(form, from_=1, to=75, textvariable=self.calc_inv_var, width=6).grid(
-                row=0, column=3, padx=4, pady=4
-            )
-
-            ttk.Label(form, text="Day (YYYY-MM-DD)").grid(row=1, column=0, sticky="w", padx=4, pady=4)
-            self.calc_day_var = tk.StringVar()
-            self.calc_day_box = ttk.Combobox(form, textvariable=self.calc_day_var, values=[], width=15)
-            self.calc_day_box.grid(row=1, column=1, padx=4, pady=4)
-
-            ttk.Label(form, text="Start Time (HH:MM:SS)").grid(row=1, column=2, sticky="w", padx=4, pady=4)
-            self.calc_time_var = tk.StringVar()
-            ttk.Entry(form, textvariable=self.calc_time_var, width=12).grid(row=1, column=3, padx=4, pady=4)
-
-            ttk.Button(form, text="Calculate Energy", command=self._calculate).grid(
-                row=2, column=0, columnspan=4, pady=8
-            )
-
-            self.calc_result_var = tk.StringVar(value="")
-            ttk.Label(calc_frame, textvariable=self.calc_result_var, font=("Segoe UI", 11, "bold")).pack(
-                anchor="w", padx=8, pady=(0, 8)
-            )
-
-            self._on_calc_month_change()
-
-        graph_frame = ttk.LabelFrame(self, text="Sunset Energy Comparison Graph")
-        graph_frame.pack(fill="x", pady=(0, 10))
-        if VisualizeEnergies is None:
-            unavailable_notice(graph_frame, "VisualizeEnergies")
-        else:
-            form = ttk.Frame(graph_frame, padding=8)
-            form.pack(fill="x")
-
-            ttk.Label(form, text="Month").grid(row=0, column=0, sticky="w", padx=4, pady=4)
-            self.graph_month_var = tk.StringVar(value=MONTHS[0])
-            month_box = ttk.Combobox(
-                form, textvariable=self.graph_month_var, values=MONTHS, state="readonly", width=15
-            )
-            month_box.grid(row=0, column=1, padx=4, pady=4)
-            month_box.bind("<<ComboboxSelected>>", lambda e: self._on_graph_month_change())
-
-            ttk.Label(form, text="Day").grid(row=0, column=2, sticky="w", padx=4, pady=4)
-            self.graph_day_var = tk.StringVar()
-            self.graph_day_box = ttk.Combobox(
-                form, textvariable=self.graph_day_var, values=[], state="readonly", width=15
-            )
-            self.graph_day_box.grid(row=0, column=3, padx=4, pady=4)
-
-            ttk.Label(form, text="Sunset Time").grid(row=1, column=0, sticky="w", padx=4, pady=4)
-            self.graph_time_var = tk.StringVar()
-            ttk.Entry(form, textvariable=self.graph_time_var, width=12, state="readonly").grid(
-                row=1, column=1, padx=4, pady=4
-            )
-
-            ttk.Label(form, text="First Inverter").grid(row=1, column=2, sticky="w", padx=4, pady=4)
-            self.first_inv_var = tk.IntVar(value=1)
-            ttk.Spinbox(form, from_=1, to=75, textvariable=self.first_inv_var, width=6).grid(
-                row=1, column=3, padx=4, pady=4
-            )
-
-            ttk.Label(form, text="Last Inverter").grid(row=1, column=4, sticky="w", padx=4, pady=4)
-            self.last_inv_var = tk.IntVar(value=75)
-            ttk.Spinbox(form, from_=1, to=75, textvariable=self.last_inv_var, width=6).grid(
-                row=1, column=5, padx=4, pady=4
-            )
-
-            ttk.Button(graph_frame, text="Show Graph", command=self._show_graph).pack(
-                anchor="w", padx=8, pady=(0, 4)
-            )
-
-            ttk.Label(
-                graph_frame,
-                text=(
-                    "Opens in a separate Matplotlib window (may block this window until closed).\n"
-                    "Bar colors (red = flagged inverter) are hardcoded in VisualizeEnergies.py for "
-                    "July2025 only — they won't be meaningful for other months."
-                ),
-                foreground="#666",
-                wraplength=650,
-                justify="left",
-            ).pack(anchor="w", padx=8, pady=(0, 8))
-
-            self._on_graph_month_change()
-
-    def _on_calc_month_change(self):
-        cfg = load_config()
-        month = self.calc_month_var.get()
-        days = cfg["days"].get(month, [])
-        self.calc_day_box.configure(values=days)
-        if days:
-            self.calc_day_var.set(days[0])
-        sunset = cfg["sunsetTimes"].get(month, "")
-        if sunset:
-            self.calc_time_var.set(sunset)
-
-    def _calculate(self):
-        month = self.calc_month_var.get()
-        inv = self.calc_inv_var.get()
-        day = self.calc_day_var.get().strip()
-        start_time = self.calc_time_var.get().strip()
-        if not day or not start_time:
-            messagebox.showwarning("Missing input", "Please provide both a day and a start time.")
-            return
-        try:
-            energy = CalcEnergy.getEnergy(month, inv, day, start_time)
-        except FileNotFoundError as exc:
-            messagebox.showerror("Data not found", f"Could not read data for this selection:\n{exc}")
-            return
-        except Exception as exc:
-            messagebox.showerror("Error", str(exc))
-            return
-        self.calc_result_var.set(f"Energy produced: {energy:.3f}")
-
-    def _on_graph_month_change(self):
-        cfg = load_config()
-        month = self.graph_month_var.get()
-        days = cfg["days"].get(month, [])
-        self.graph_day_box.configure(values=days)
-        self.graph_day_var.set(days[0] if days else "")
-        self.graph_time_var.set(cfg["sunsetTimes"].get(month, ""))
-
-    def _show_graph(self):
-        month = self.graph_month_var.get()
-        day = self.graph_day_var.get().strip()
-        time = self.graph_time_var.get().strip()
-        first_inv = self.first_inv_var.get()
-        last_inv = self.last_inv_var.get()
-        if not day:
-            messagebox.showwarning("Missing input", "This month has no configured days to choose from.")
-            return
-        if not time:
-            messagebox.showwarning(
-                "Missing sunset time", f"{month} has no sunset time set. Set one in the Config Editor tab."
-            )
-            return
-        if first_inv > last_inv:
-            messagebox.showwarning("Invalid range", "First Inverter must be <= Last Inverter.")
-            return
-        try:
-            VisualizeEnergies.makeGraph(month, day, time, first_inv, last_inv)
-        except FileNotFoundError:
-            close_stray_graph_windows()
-            messagebox.showerror(
-                "Data not found",
-                f"No {month}SunsetEnergies.csv found. Generate it with CompareEnergy.py first.",
-            )
-        except KeyError as exc:
-            close_stray_graph_windows()
-            messagebox.showerror("Missing data", f"No column for '{day} {time}' in the energies CSV: {exc}")
-        except Exception as exc:
-            close_stray_graph_windows()
-            messagebox.showerror("Error", str(exc))
-
-
 class MonthlyGraphsTab(ttk.Frame):
     """Whole-month line graphs (one line per day) for irradiance and for a
-    single inverter's active power."""
+    single inverter's active power, plus the sunset energy comparison graph
+    and the energy calculator underneath them."""
 
     def __init__(self, parent):
         super().__init__(parent, padding=10)
 
-        irr_frame = ttk.LabelFrame(self, text="Irradiance (whole month)")
+        # Four stacked sections no longer fit in the window at once, so the
+        # whole tab scrolls vertically -- everything below is built inside
+        # `content` rather than directly on `self`.
+        canvas = tk.Canvas(self, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        content = ttk.Frame(canvas)
+        content_window = canvas.create_window((0, 0), window=content, anchor="nw")
+        content.bind(
+            "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas.bind("<Configure>", lambda e: canvas.itemconfig(content_window, width=e.width))
+
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _on_mousewheel))
+        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
+
+        irr_frame = ttk.LabelFrame(content, text="Irradiance (whole month)")
         irr_frame.pack(fill="x", pady=(0, 10))
         if IrradianceOneMonth is None:
             unavailable_notice(irr_frame, "IrradianceOneMonth")
@@ -521,7 +547,7 @@ class MonthlyGraphsTab(ttk.Frame):
                 anchor="w", padx=8, pady=(0, 8)
             )
 
-        power_frame = ttk.LabelFrame(self, text="Inverter Active Power (whole month)")
+        power_frame = ttk.LabelFrame(content, text="Inverter Active Power (whole month)")
         power_frame.pack(fill="x", pady=(0, 10))
         if OneInverterOverTime is None:
             unavailable_notice(power_frame, "OneInverterOverTime")
@@ -550,8 +576,98 @@ class MonthlyGraphsTab(ttk.Frame):
                 anchor="w", padx=8, pady=(0, 8)
             )
 
+        multi_power_frame = ttk.LabelFrame(content, text="Active Power (multiple inverters, one day)")
+        multi_power_frame.pack(fill="x", pady=(0, 10))
+        if OneDayMultInverters is None:
+            unavailable_notice(multi_power_frame, "OneDayMultInverters")
+        else:
+            form = ttk.Frame(multi_power_frame, padding=8)
+            form.pack(fill="x")
+
+            ttk.Label(form, text="Month").grid(row=0, column=0, sticky="w", padx=4, pady=4)
+            self.multi_power_month_var = tk.StringVar(value=MONTHS[0])
+            month_box = ttk.Combobox(
+                form, textvariable=self.multi_power_month_var, values=MONTHS, state="readonly", width=15
+            )
+            month_box.grid(row=0, column=1, padx=4, pady=4)
+            month_box.bind("<<ComboboxSelected>>", lambda e: self._on_multi_power_month_change())
+
+            ttk.Label(form, text="Day").grid(row=0, column=2, sticky="w", padx=4, pady=4)
+            self.multi_power_day_var = tk.StringVar()
+            ttk.Entry(form, textvariable=self.multi_power_day_var, width=6).grid(
+                row=0, column=3, sticky="w", padx=4, pady=4
+            )
+
+            self.multi_power_good_days_var = tk.StringVar()
+            ttk.Label(form, text="Good days:").grid(row=0, column=4, sticky="w", padx=(12, 4), pady=4)
+            ttk.Label(form, textvariable=self.multi_power_good_days_var, foreground="#666", wraplength=260).grid(
+                row=0, column=5, sticky="w", padx=4, pady=4
+            )
+
+            ttk.Label(form, text="Inverters").grid(row=1, column=0, sticky="w", padx=4, pady=4)
+            self.multi_power_inv_var = tk.StringVar()
+            ttk.Entry(form, textvariable=self.multi_power_inv_var, width=20).grid(
+                row=1, column=1, columnspan=2, sticky="w", padx=4, pady=4
+            )
+            ttk.Label(form, text="e.g. 1-5, 8-10, 12 (blank = all)", foreground="#666").grid(
+                row=1, column=3, columnspan=2, sticky="w", padx=4, pady=4
+            )
+
+            ttk.Button(
+                multi_power_frame, text="Show Power Graph", command=self._show_multi_power_graph
+            ).pack(anchor="w", padx=8, pady=(0, 8))
+
+            self._on_multi_power_month_change()
+
+        graph_frame = ttk.LabelFrame(content, text="Sunset Energy Comparison Graph")
+        graph_frame.pack(fill="x", pady=(0, 10))
+        if VisualizeEnergies is None:
+            unavailable_notice(graph_frame, "VisualizeEnergies")
+        else:
+            form = ttk.Frame(graph_frame, padding=8)
+            form.pack(fill="x")
+
+            ttk.Label(form, text="Month").grid(row=0, column=0, sticky="w", padx=4, pady=4)
+            self.graph_month_var = tk.StringVar(value=MONTHS[0])
+            month_box = ttk.Combobox(
+                form, textvariable=self.graph_month_var, values=MONTHS, state="readonly", width=15
+            )
+            month_box.grid(row=0, column=1, padx=4, pady=4)
+            month_box.bind("<<ComboboxSelected>>", lambda e: self._on_graph_month_change())
+
+            ttk.Label(form, text="Day").grid(row=0, column=2, sticky="w", padx=4, pady=4)
+            self.graph_day_var = tk.StringVar()
+            ttk.Entry(form, textvariable=self.graph_day_var, width=6).grid(
+                row=0, column=3, sticky="w", padx=4, pady=4
+            )
+
+            self.graph_good_days_var = tk.StringVar()
+            ttk.Label(form, text="Good days:").grid(row=0, column=4, sticky="w", padx=(12, 4), pady=4)
+            ttk.Label(form, textvariable=self.graph_good_days_var, foreground="#666", wraplength=260).grid(
+                row=0, column=5, sticky="w", padx=4, pady=4
+            )
+
+            # Not shown in the UI, but still tracked -- makeGraph() needs the
+            # configured sunset curve time even though the field isn't visible.
+            self.graph_time_var = tk.StringVar()
+
+            ttk.Label(form, text="Inverters").grid(row=1, column=0, sticky="w", padx=4, pady=4)
+            self.graph_inv_var = tk.StringVar()
+            ttk.Entry(form, textvariable=self.graph_inv_var, width=20).grid(
+                row=1, column=1, columnspan=2, sticky="w", padx=4, pady=4
+            )
+            ttk.Label(form, text="e.g. 1-5, 8-10, 12 (blank = all)", foreground="#666").grid(
+                row=1, column=3, columnspan=2, sticky="w", padx=4, pady=4
+            )
+
+            ttk.Button(graph_frame, text="Show Graph", command=self._show_graph).pack(
+                anchor="w", padx=8, pady=(0, 8)
+            )
+
+            self._on_graph_month_change()
+
         ttk.Label(
-            self,
+            content,
             text="Each graph opens in a separate Matplotlib window (may block this window until closed).",
             foreground="#666",
             wraplength=650,
@@ -601,6 +717,81 @@ class MonthlyGraphsTab(ttk.Frame):
         except IndexError:
             close_stray_graph_windows()
             messagebox.showerror("Invalid days", f"One or more of those days don't exist in {month}'s data.")
+        except Exception as exc:
+            close_stray_graph_windows()
+            messagebox.showerror("Error", str(exc))
+
+    def _on_multi_power_month_change(self):
+        cfg = load_config()
+        month = self.multi_power_month_var.get()
+        self.multi_power_good_days_var.set(good_days_summary(cfg, month))
+
+    def _show_multi_power_graph(self):
+        month = self.multi_power_month_var.get()
+        day = resolve_day_input(self.multi_power_day_var.get(), month)
+        if day is None:
+            return
+
+        inv_text = self.multi_power_inv_var.get().strip()
+        if not inv_text:
+            inv_nums = []
+        else:
+            try:
+                inv_nums = parse_day_range(inv_text)
+            except ValueError as exc:
+                messagebox.showerror("Invalid inverters", f"Couldn't parse the inverters field: {exc}")
+                return
+
+        try:
+            OneDayMultInverters.makeGraph(month, day, inv_nums)
+        except FileNotFoundError:
+            close_stray_graph_windows()
+            messagebox.showerror("Data not found", f"No active power data found for {month}.")
+        except Exception as exc:
+            close_stray_graph_windows()
+            messagebox.showerror("Error", str(exc))
+
+    def _on_graph_month_change(self):
+        cfg = load_config()
+        month = self.graph_month_var.get()
+        self.graph_good_days_var.set(good_days_summary(cfg, month))
+        self.graph_time_var.set(cfg["sunsetTimes"].get(month, ""))
+
+    def _show_graph(self):
+        month = self.graph_month_var.get()
+        time = self.graph_time_var.get().strip()
+        inv_text = self.graph_inv_var.get().strip()
+
+        day = resolve_day_input(self.graph_day_var.get(), month)
+        if day is None:
+            return
+
+        if not time:
+            messagebox.showwarning(
+                "Missing sunset curve time", f"{month} has no sunset curve time set. Set one in the Config Editor tab."
+            )
+            return
+
+        if not inv_text:
+            inv_nums = []
+        else:
+            try:
+                inv_nums = parse_day_range(inv_text)
+            except ValueError as exc:
+                messagebox.showerror("Invalid inverters", f"Couldn't parse the inverters field: {exc}")
+                return
+
+        try:
+            VisualizeEnergies.makeGraph(month, day, time, inv_nums)
+        except FileNotFoundError:
+            close_stray_graph_windows()
+            messagebox.showerror(
+                "Data not found",
+                f"No {month}SunsetEnergies.csv found. Generate it with CompareEnergy.py first.",
+            )
+        except KeyError as exc:
+            close_stray_graph_windows()
+            messagebox.showerror("Missing data", f"No column for '{day} {time}' in the energies CSV: {exc}")
         except Exception as exc:
             close_stray_graph_windows()
             messagebox.showerror("Error", str(exc))
@@ -703,7 +894,7 @@ class GoodDaysDialog(tk.Toplevel):
         cfg = load_config()
         sunset_time = cfg["sunsetTimes"].get(self.month_year, "").strip()
         if not sunset_time:
-            self.status_var.set("Set a sunset time for this month first.")
+            self.status_var.set("Set a sunset curve time for this month first.")
             return
         filepath = PROJECT_ROOT / "Data" / "Irradiance" / f"{self.month_year}.csv"
         if not filepath.exists():
@@ -741,8 +932,8 @@ class ConfigTab(ttk.Frame):
     COLUMNS = ("month", "sunrise", "sunset", "slope", "d2", "gooddays")
     HEADINGS = {
         "month": "Month",
-        "sunrise": "Sunrise Time",
-        "sunset": "Sunset Time",
+        "sunrise": "Sunrise Curve Time",
+        "sunset": "Sunset Curve Time",
         "slope": "Slope Cutoff",
         "d2": "Concavity Cutoff",
         "gooddays": "Good Days",
@@ -761,7 +952,7 @@ class ConfigTab(ttk.Frame):
         ttk.Label(
             self,
             text=(
-                "Sunrise Time is a placeholder for future use -- no analysis script reads it yet.\n"
+                "Sunrise Curve Time is a placeholder for future use -- no analysis script reads it yet.\n"
                 "Double-click a cell to edit it. Double-click Good Days to add/remove/suggest days."
             ),
             foreground="#666",
@@ -899,14 +1090,23 @@ class ConfigTab(ttk.Frame):
                 return
 
         cfg = load_config()
+        old_value = cfg[self.CONFIG_KEYS[col_name]].get(row_id)
+        self._destroy_editor()
+
+        if new_value == old_value:
+            # Unchanged -- e.g. the user clicked into the cell and clicked
+            # back out without editing it. Skip the save and (for sunset)
+            # skip regenerating the Slopes/Concavity/SunsetEnergies CSVs,
+            # since nothing actually changed.
+            return
+
         cfg[self.CONFIG_KEYS[col_name]][row_id] = new_value
         save_config(cfg)
 
         self.tree.set(row_id, col_name, new_value)
-        self._destroy_editor()
 
         if col_name == "sunset":
-            self._regenerate_analysis_csvs(row_id, cfg["days"].get(row_id, []))
+            self._regenerate_analysis_csvs(row_id, on_done=lambda: self._regenerate_energy_file(row_id))
 
     def _open_good_days_dialog(self, month):
         cfg = load_config()
@@ -917,44 +1117,122 @@ class ConfigTab(ttk.Frame):
             cfg2["days"][month] = new_days
             save_config(cfg2)
             self.tree.set(month, "gooddays", ", ".join(new_days))
-            self._regenerate_analysis_csvs(month, new_days)
+            # Not regenerating Slopes/Concavity or SunsetEnergies CSVs here:
+            # generateCSV()/makeFile() now compute for every day present in
+            # the data, not just the configured good days, so they no longer
+            # depend on this list. Only a sunset curve time change re-runs
+            # them (see _commit_cell_edit).
 
         GoodDaysDialog(self, month, current_days, on_save)
 
-    def _regenerate_analysis_csvs(self, month, days):
+    def _regenerate_analysis_csvs(self, month, on_done=None):
         """Rebuild Slopes/{month}.csv and Concavities/{month}.csv for the
-        current good days, since AnalyzeDropSlopes/AnalyzeConcavity read
-        those files rather than computing on the fly."""
-        if FindDropSlopes is None or FindConcavity is None:
+        current sunset time, since AnalyzeDropSlopes/AnalyzeConcavity read
+        those files rather than computing on the fly. Only triggered by a
+        sunset curve time change -- both generateCSV() functions now compute
+        for every day present in the inverter data, not just the configured
+        good days, so a good-days change no longer needs to re-run them.
+
+        FindConcavity.generateCSV() reads Slopes/{month}.csv itself, so it
+        must only run once FindDropSlopes.generateCSV() has finished
+        successfully -- the sequential calls below, both inside the same
+        try block, already guarantee that (an exception from the first call
+        skips the second). Both functions print their own per-inverter
+        progress, which can take a while, so that output is captured and
+        shown in a popup -- run in a background thread so the popup can
+        actually appear and render right away instead of sitting invisible
+        until this whole (possibly slow) call returns to the mainloop.
+        on_done(), if given, runs afterward on the UI thread regardless of
+        success/failure, once the popup has been updated -- used to chain
+        _regenerate_energy_file() after this instead of racing it."""
+        missing = [
+            name
+            for name, mod in (
+                ("FindDropSlopes", FindDropSlopes),
+                ("FindConcavity", FindConcavity),
+            )
+            if mod is None
+        ]
+        if missing:
             messagebox.showerror(
                 "Unavailable",
                 "Can't regenerate Slopes/Concavity CSVs -- "
-                f"{IMPORT_ERRORS.get('FindDropSlopes') or IMPORT_ERRORS.get('FindConcavity')}",
+                + "; ".join(f"{name}: {IMPORT_ERRORS.get(name)}" for name in missing),
             )
+            if on_done:
+                on_done()
             return
-        if not days:
-            return  # nothing to compute
 
         cfg = load_config()
         sunset_time = cfg["sunsetTimes"].get(month, "").strip()
         if not sunset_time:
             messagebox.showwarning(
-                "Missing sunset time",
-                f"Set a sunset time for {month} before its Slopes/Concavity CSVs can be regenerated.",
+                "Missing sunset curve time",
+                f"Set a sunset curve time for {month} before its Slopes/Concavity CSVs can be regenerated.",
+            )
+            if on_done:
+                on_done()
+            return
+
+        _win, text_widget = show_output_popup(
+            self,
+            "Slopes/Concavity regeneration output",
+            "Running -- this can take a while (calculating slopes/concavity for every inverter)...",
+        )
+
+        def work():
+            error = None
+            writer = _LivePopupWriter(self, text_widget)
+            sys.stdout.set_buffer(writer)
+            try:
+                FindDropSlopes.generateCSV(month, sunset_time)
+                FindConcavity.generateCSV(month)
+            except Exception as exc:
+                error = str(exc)
+            finally:
+                sys.stdout.set_buffer(None)
+
+            def finish():
+                if error:
+                    messagebox.showerror(
+                        "Regeneration failed",
+                        f"Couldn't regenerate Slopes/Concavity CSVs for {month}:\n{error}",
+                    )
+                if on_done:
+                    on_done()
+
+            self.after(0, finish)
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _regenerate_energy_file(self, month):
+        """Rebuild {month}SunsetEnergies.csv, since the sunset energy graph
+        reads that file rather than computing on the fly. Only triggered by
+        a sunset curve time change -- CompareEnergy.makeFile() now computes
+        energy for every day in the month (not just the configured good
+        days), so a good-days change no longer needs to re-run it."""
+        if CompareEnergy is None:
+            messagebox.showerror(
+                "Unavailable",
+                f"Can't regenerate the SunsetEnergies CSV -- CompareEnergy: {IMPORT_ERRORS.get('CompareEnergy')}",
+            )
+            return
+
+        cfg = load_config()
+        sunset_time = cfg["sunsetTimes"].get(month, "").strip()
+        if not sunset_time:
+            messagebox.showwarning(
+                "Missing sunset curve time",
+                f"Set a sunset curve time for {month} before its SunsetEnergies CSV can be regenerated.",
             )
             return
 
         try:
-            import pandas as pd  # already a dependency of the imported modules
-
-            FindDropSlopes.generateCSV(month, days, sunset_time)
-            slopes_path = PROJECT_ROOT / "Data_Analysis" / "MathingIt" / "Slopes" / f"{month}.csv"
-            df_st = pd.read_csv(slopes_path)
-            FindConcavity.generateCSV(month, df_st, days)
+            CompareEnergy.makeFile(month)
         except Exception as exc:
             messagebox.showerror(
                 "Regeneration failed",
-                f"Couldn't regenerate Slopes/Concavity CSVs for {month}:\n{exc}",
+                f"Couldn't regenerate the SunsetEnergies CSV for {month}:\n{exc}",
             )
 
 
@@ -965,14 +1243,24 @@ def main():
 
     # 'clam' is used instead of the Windows-native default theme because
     # that native theme ignores custom Treeview colors (heading background,
-    # row striping) needed by the Config Editor tab.
-    ttk.Style().theme_use("clam")
+    # row striping) needed by the Config Editor tab. clam's own default
+    # background is a tan/gray, so it's overridden to white below -- the
+    # Config Editor's own deliberate header/row colors (set directly on its
+    # Config.Treeview style) are unaffected by this.
+    style = ttk.Style()
+    style.theme_use("clam")
+    style.configure(".", background="white", fieldbackground="white")
+    for widget_style in (
+        "TFrame", "TLabelframe", "TLabelframe.Label", "TLabel",
+        "TNotebook", "TNotebook.Tab", "TButton", "TCheckbutton", "TRadiobutton",
+    ):
+        style.configure(widget_style, background="white")
+    root.configure(background="white")
 
     notebook = ttk.Notebook(root)
     notebook.pack(fill="both", expand=True, padx=8, pady=8)
 
     notebook.add(MonthlyGraphsTab(notebook), text="Graphs")
-    notebook.add(EnergyGraphsTab(notebook), text="Energy Graphs")
     notebook.add(FlagsTab(notebook), text="Shady")
     notebook.add(ConfigTab(notebook), text="Config Editor")
 

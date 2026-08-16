@@ -1,12 +1,21 @@
 {
     "days": {
-        "January2025": [],
-        "February2025": [],
-        "March2025": [],
-        "April2025": [],
-        "May2025": [],
+        "January2025": [
+            "2025-01-05"
+        ],
+        "February2025": [
+            "2025-02-02"
+        ],
+        "March2025": [
+            "2025-03-08"
+        ],
+        "April2025": [
+            "2025-04-19"
+        ],
+        "May2025": [
+            "2025-05-07"
+        ],
         "June2025": [
-            "2025-06-01",
             "2025-06-20"
         ],
         "July2025": [
@@ -27,51 +36,57 @@
             "2025-09-19",
             "2025-09-26"
         ],
-        "October2025": [],
-        "November2025": [],
-        "December2025": []
+        "October2025": [
+            "2025-10-01"
+        ],
+        "November2025": [
+            "2025-11-07"
+        ],
+        "December2025": [
+            "2025-12-06"
+        ]
     },
     "sunsetTimes": {
-        "January2025": "",
-        "February2025": "",
-        "March2025": "",
-        "April2025": "",
-        "May2025": "",
-        "June2025": "16:10:00",
+        "January2025": "13:50:00",
+        "February2025": "14:00:00",
+        "March2025": "14:20:00",
+        "April2025": "15:45:00",
+        "May2025": "16:00:00",
+        "June2025": "16:20:00",
         "July2025": "16:30:00",
         "August2025": "16:10:00",
-        "September2025": "15:45:00",
-        "October2025": "",
-        "November2025": "",
-        "December2025": ""
+        "September2025": "15:40:00",
+        "October2025": "15:10:00",
+        "November2025": "13:50:00",
+        "December2025": "13:50:00"
     },
     "slopeCutOffs": {
-        "January2025": 0,
-        "February2025": 0,
-        "March2025": 0,
-        "April2025": 0,
-        "May2025": 0,
-        "June2025": 0,
+        "January2025": -2.2,
+        "February2025": -2.3,
+        "March2025": -2.3,
+        "April2025": -2.6,
+        "May2025": -4.5,
+        "June2025": -4.5,
         "July2025": -3.6,
         "August2025": -3.6,
         "September2025": -3.6,
-        "October2025": 0,
-        "November2025": 0,
-        "December2025": 0
+        "October2025": -3.6,
+        "November2025": -3.3,
+        "December2025": -4.0
     },
     "d2CutOffs": {
-        "January2025": 0,
-        "February2025": 0,
-        "March2025": 0,
-        "April2025": 0,
-        "May2025": 0,
-        "June2025": 0,
+        "January2025": 0.15,
+        "February2025": 0.2,
+        "March2025": 0.1,
+        "April2025": 0.15,
+        "May2025": 0.15,
+        "June2025": 0.18,
         "July2025": 0.15,
         "August2025": 0.15,
         "September2025": 0.15,
-        "October2025": 0,
-        "November2025": 0,
-        "December2025": 0
+        "October2025": 0.18,
+        "November2025": 0.15,
+        "December2025": 0.15
     },
     "sunriseTimes": {
         "January2025": "",

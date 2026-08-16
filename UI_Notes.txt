@@ -1,0 +1,6 @@
+Add sunrise
+
+Hard-code default sunrise/sunset times, but user can change them
+
+store data once in a onedrive, where teacher can download/
+delete data, students can only access and analyze

@@ -2,14 +2,14 @@ import pandas as pd
 import json
 from pathlib import Path
 
-config_path = Path("config.json")
-with open(config_path, "r") as file:
-    config = json.load(file)
-
 monthYear = 'July2025'
 
 # get list of strings of inverters outside ranges
 def getResults(monthYear, day):
+    config_path = Path("config.json")
+    with open(config_path, "r") as file:
+        config = json.load(file)
+
     df = pd.read_csv(f'Data_Analysis\MathingIt\Slopes\{monthYear}.csv')
 
     # calculate numbers to use as boundaries for notable data
@@ -38,4 +38,7 @@ def printResults(monthYear, day):
         print(r)
 
 if __name__ == '__main__':
+    config_path = Path("config.json")
+    with open(config_path, "r") as file:
+        config = json.load(file)
     printResults(monthYear, config["days"][monthYear][1])

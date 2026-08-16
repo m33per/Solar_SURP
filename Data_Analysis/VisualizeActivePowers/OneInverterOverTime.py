@@ -7,21 +7,24 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 invNum = 5
-monthYear = 'July2025'
+monthYear = 'May2025'
 
-def showGraph(monthYear, invNum, days=None):
+def showGraph(monthYear, invNum, daysFromUser=None):
     df = pd.read_csv(f"Data\ActivePower\{monthYear}\Inverter{invNum}.csv", skipinitialspace=True)
     df = df.dropna(axis=1, how="all") # drops extra empty column caused by trailing commas
 
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    if days == None:
-        days = []
+    days = []
+    if daysFromUser == None: # if no days, set days to all days in month
         for i in range(0, df.shape[1], 2):
             days.append(int((i + 2) / 2))
+    else: # correspond days to actual day in month, skipping invalid days
+        for i, (col_name, col_data) in enumerate(df.items()):
+            if 'Time Stamp' in col_name:
+                if int(col_data[0][8:10]) in daysFromUser:
+                    days.append(int((i + 2) / 2))
 
-    #for i in range(18, 20, 2): # to see part of month
-    #for i in range(0, df.shape[1], 2): # to see whole month
     for day in days:
         i = (day - 1) * 2
         timestamps = pd.to_datetime(df.iloc[:, i])
@@ -52,3 +55,6 @@ def showGraph(monthYear, invNum, days=None):
 
     plt.tight_layout()
     plt.show()
+
+if __name__ == '__main__':
+    showGraph(monthYear, invNum, [1])

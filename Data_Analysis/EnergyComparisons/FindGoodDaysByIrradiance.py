@@ -3,11 +3,6 @@ import pandas as pd
 import json
 from pathlib import Path
 
-config_path = Path("config.json")
-with open(config_path, "r") as file:
-    config = json.load(file)
-
-
 monthYear = 'August2025'
 
 filepath = f"Data\Irradiance\{monthYear}.csv"
@@ -47,6 +42,11 @@ def getGoodDays(df, sunsetTime):
     return goodDays
 
 
-'''sunsetTime = findSunsetTimeIndex(df, config["sunsetTimes"][monthYear])
+'''
+config_path = Path("config.json")
+with open(config_path, "r") as file:
+    config = json.load(file)
+    
+sunsetTime = findSunsetTimeIndex(df, config["sunsetTimes"][monthYear])
 goodDays = getGoodDays(df, sunsetTime)
 print(goodDays)'''

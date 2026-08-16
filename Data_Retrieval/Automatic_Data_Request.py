@@ -1,5 +1,5 @@
 import subprocess
-import ProdIds as ProdIds
+import Data_Retrieval.ProdIds as ProdIds
 
 # input a single product ID
 def provideID(process, id, value):

@@ -1,10 +1,10 @@
 import Production_IDs_Dict
 
 # get production ids from user
-def get_ids():
+def get_ids(runMe=False):
     ids = {}
 
-    while True:
+    while runMe:
         k = ''
         v = ''
 
